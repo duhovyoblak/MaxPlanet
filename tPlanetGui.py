@@ -225,6 +225,20 @@ class TPlanetGui(tk.Tk):
         btn_gen = ttk.Button(frm, text='Generate now', command=self.generate)
         btn_gen.grid(row=1, column=8, sticky='we')
         
+        separator1 = ttk.Separator(frm, orient='horizontal')
+        separator1.grid(row=2, column=1, columnspan=8, sticky='we')       
+        
+        #----------------------------------------------------------------------
+        # Load & Save Buttons
+        #----------------------------------------------------------------------
+        btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
+        btn_load.grid(row=3, column=8, sticky='we')
+        
+        btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
+        btn_save.grid(row=4, column=8, sticky='we')
+        
+        separator2 = ttk.Separator(frm, orient='horizontal')
+        separator2.grid(row=5, column=1, columnspan=8, sticky='we')       
         
     #--------------------------------------------------------------------------
     def generate(self):
@@ -248,6 +262,16 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
         self.mapShow(self.frame_map)
+        
+    #--------------------------------------------------------------------------
+    def load(self):
+        
+        pass
+
+    #--------------------------------------------------------------------------
+    def save(self):
+        
+        pass
         
     #--------------------------------------------------------------------------
     def tabSimulShow(self):
