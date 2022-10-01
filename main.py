@@ -3,6 +3,7 @@
 #------------------------------------------------------------------------------
 from siqo_journal     import SiqoJournal
 from tPlanet          import TPlanet
+from tPlanetGui       import TPlanetGui
 
 #==============================================================================
 # package's constants
@@ -16,7 +17,7 @@ from tPlanet          import TPlanet
 #------------------------------------------------------------------------------
 if __name__ =='__main__':
   
-    journal = SiqoJournal('MaxPlanet')
+    journal = SiqoJournal('MaxPlanet', debug=3)
     journal.I( 'Main loop' )
     
     # Vytvorim testovaciu Planetu
@@ -24,7 +25,8 @@ if __name__ =='__main__':
     tp.generate(20, 20)
     
     # Vytvorim GUI
-#    gui = Space3Mgui(st)
+    gui = TPlanetGui(journal, tp)
+    gui.mainloop()       # Start listening for events
     
     journal.O('Main end')
     

@@ -41,7 +41,7 @@ class TPlanet:
         self.period     = 0           # Maximalna perioda dosiahnuta v simulacii
 
         # Prepojim evidenciu Tiles
-        self.tiles      = TTile.tiles # Geografia planety tiles}
+        self.tiles      = TTile.tiles # Geografia planety  {tileId: tileObj}
 
         self.journal.O(f'{self.name}.constructor: done')
         
@@ -103,12 +103,17 @@ class TPlanet:
     
         self.journal.I(f'{self.name}.generate: New planet {rows} * {cols}')
         
-        self.rows = rows
-        self.cols = cols
+        #----------------------------------------------------------------------
+        # Zrusim existujucu planetu
+        #----------------------------------------------------------------------
+        self.clear()
         
         #----------------------------------------------------------------------
         # Najprv vytvorim vsetky tiles        
         #----------------------------------------------------------------------
+        self.rows = rows
+        self.cols = cols
+        
         for r in range(self.rows):
             for c in range(self.cols):
                 tileObj     = TTile( self.getTileId(r, c) )
@@ -127,6 +132,17 @@ class TPlanet:
     
     #==========================================================================
     # Internal methods
+    #--------------------------------------------------------------------------
+    def getTile(self, row, col):
+        "Returns Tile for respective row, col"
+        
+        tileId = self.getTileId(row, col)
+        
+        if tileId in self.tiles.keys(): return self.tiles[tileId]
+        else:
+            self.journal.M(f'{self.name}.getTile: Tile ID {tileId} does not exists')
+            return None
+        
     #--------------------------------------------------------------------------
     def getTileId(self, row, col):
         "Returns tileID for respective row, col"
