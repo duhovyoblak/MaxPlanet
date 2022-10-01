@@ -3,6 +3,7 @@
 #------------------------------------------------------------------------------
 import os                 as os
 import tkinter            as tk
+import planet_lib         as lib
 
 from   tkinter            import (ttk, font, messagebox, filedialog)
 from   tkinter.messagebox import askyesno
@@ -95,15 +96,13 @@ class TPlanetGui(tk.Tk):
         self.mapShow(self.frame_map)
 
         #----------------------------------------------------------------------
-        # Tile Menu pri click on Tile
+        # Vytvorim Menu pre click on Tile / nastavenie height
         #----------------------------------------------------------------------
         self.tileMenu = tk.Menu(self, tearoff = 0)
-        self.tileMenu.add_command(label ="Height :    0"      , command=lambda: self.tileHeight(  0))
-        self.tileMenu.add_command(label ="Height :  200"      , command=lambda: self.tileHeight(200))
-        self.tileMenu.add_command(label ="Height :  400"      , command=lambda: self.tileHeight(400))
-        self.tileMenu.add_command(label ="Height :  600"      , command=lambda: self.tileHeight(600))
-        self.tileMenu.add_command(label ="Height :  800"      , command=lambda: self.tileHeight(800))
-        self.tileMenu.add_command(label ="Edit tribes"        , command=self.tileTribes())
+        
+        for h in range(0, 3100, 200):
+            self.tileMenu.add_command(label =f"Height :   {str(h).ljust(5)}", command=lambda t=str(h): self.tileHeight(t))
+            
         
         self.journal.O( f'TPlanetGui{self.title}.show: End' )
 
@@ -140,13 +139,7 @@ class TPlanetGui(tk.Tk):
        
         self.str_status_bar.set(mess)
  
-    #--------------------------------------------------------------------------
-    def tab_changed(self, event):
-       
-        self.tab_selected = self.tabs.index("current")
-#        self.refresh()
-
-      #==========================================================================
+    #==========================================================================
     # Pravy panel pre nastroje
     #--------------------------------------------------------------------------
     def toolsShow(self):
@@ -167,9 +160,15 @@ class TPlanetGui(tk.Tk):
         self.tabEditShow()
         self.tabSimulShow()
    
-#        self.tabs.bind('<<NotebookTabChanged>>', self.tab_changed)
+        self.tabs.bind('<<NotebookTabChanged>>', self.tabChanged)
         self.tabs.select(self.tab_selected)
        
+    #--------------------------------------------------------------------------
+    def tabChanged(self, event):
+       
+        self.tabSelected = self.tabs.index("current")
+#        self.refresh()
+
     #--------------------------------------------------------------------------
     def tabEditShow(self):
        
@@ -303,44 +302,70 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Vytvorenie rows * cols tiles
         #----------------------------------------------------------------------
-        self.lblTiles = []
+        self.lblTiles = {}
         
         for row in range(self.planet.rows):
             for col in range(self.planet.cols):
                 
-                height  = self.planet.getTile(row, col).height
-                bcColor = '#66ff33'
+                # Zistim vlastnosti Tile na pozicii row, col
+                tile    = self.planet.getTile(row, col)
+                height  = tile.height
+                bcColor = lib.getHeightColor(height)
             
-                lblTile = ttk.Label(frm, relief=tk.RAISED, text=f'{row}x{col}x{height}', cursor='hand2')
+                # Vytvorim label na zobrazenie Tile
+                lblTile = ttk.Label(frm, relief=tk.RAISED, text=self.tileText(row, col, height), cursor='hand2')
                 lblTile.configure(background=bcColor)
                 lblTile.bind( '<Button-1>', self.tileClick)
                 lblTile.grid(row=row, column=col, sticky='nwse')
-                self.lblTiles.append(lblTile)
-
-            
+                
+                # Ulozim si vazbu {lblTile: Tile}
+                self.lblTiles[lblTile] = tile
             
     #--------------------------------------------------------------------------
     def tileClick(self, event):
         
-        lbl  = event.widget.cget('text')
-        coor = lbl.split('x')
-        self.setStatus(f'tileClick: {event.widget} = {lbl}, row={coor[0]}, col={coor[1]}')
+        #----------------------------------------------------------------------
+        # Zistim podla eventu, na ktoru lblTile som vlastne clickol
+        #----------------------------------------------------------------------
+        self.lblTileSelected = event.widget
         
-        self.tileSelected = self.planet.getTile(coor[0], coor[1])
+        # Pre istotu si vypisem nazov tile, ktora je spojena s lblTile
+        tile = self.lblTiles[self.lblTileSelected]
+        self.setStatus(f'tileClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
     
         #nakoniec otvor popup menu
         try    : self.tileMenu.tk_popup(event.x_root, event.y_root)
         finally: self.tileMenu.grab_release()
 
     #--------------------------------------------------------------------------
-    def tileHeight(self, height):
+    def tileHeight(self, heightStr):
         
-        self.setStatus(f'tileHeight: {height} for tileId = {self.tileSelected.tileId}')
+        height = int(heightStr)
+        
+        # Ziskam tile, ktora je spojena s touto lblTile
+        tile   = self.lblTiles[self.lblTileSelected]
+        row    = tile.row
+        col    = tile.col
+        
+        self.setStatus(f'tileHeight: {height} for tileId = {tile.tileId}')
+        
+        # Nastavim vysku tile
+        tile.height = height
+        
+       # Updatnem na obrazovke lblTile
+        self.lblTileSelected.configure( background = lib.getHeightColor(height)      )
+        self.lblTileSelected.configure( text       = self.tileText(row, col, height) )
         
     #--------------------------------------------------------------------------
     def tileTribes(self):
         
         pass
+        
+    #--------------------------------------------------------------------------
+    def tileText(self, row, col, height):
+        
+        return f'{str(row).rjust(2)}x{str(col).rjust(2)}'
+#        return f' {str(row).rjust(3)}x{str(col).rjust(3)}x{str(height).rjust(4)} '
         
     #==========================================================================
     # Utility
