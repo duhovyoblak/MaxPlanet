@@ -1,6 +1,7 @@
 #==============================================================================
 # Siqo class TPlanet
 #------------------------------------------------------------------------------
+import siqo_general  as     gen
 from   tTile         import TTile
 
 #==============================================================================
@@ -34,11 +35,11 @@ class TPlanet:
         
         
         # Nastavenie vlastnosti planety
-        self.name       = name        # Nazov planety
-        self.fName      = ''          # Nazov suboru pre perzistenciu planetu
-        self.rows       = 0           # Pocet riadkov rastra planety
-        self.cols       = 0           # Pocet stlpcov rastra planety
-        self.period     = 0           # Maximalna perioda dosiahnuta v simulacii
+        self.name       = name               # Nazov planety
+        self.fName      = 'TestPlanet.json'  # Nazov suboru pre perzistenciu planetu
+        self.rows       = 0                  # Pocet riadkov rastra planety
+        self.cols       = 0                  # Pocet stlpcov rastra planety
+        self.period     = 0                  # Maximalna perioda dosiahnuta v simulacii
 
         # Prepojim evidenciu Tiles
         self.tiles      = TTile.tiles # Geografia planety  {tileId: tileObj}
@@ -183,6 +184,25 @@ class TPlanet:
 
         self.journal.I(f'{self.name}.save:')
         
+        #----------------------------------------------------------------------
+        # Vyrobim json na ulozenie
+        #----------------------------------------------------------------------
+        data = {}
+        
+        data['rows'  ]  = self.rows
+        data['cols'  ]  = self.cols
+        data['period']  = self.period
+        
+        data['tiles']   = {}
+        
+        for tileId, tileObj in self.tiles.items():
+            data[tileId] = tileObj.toJson()
+        
+        #----------------------------------------------------------------------
+        # Zapisem json na disk
+        #----------------------------------------------------------------------
+        gen.dumpJson(self.journal, self.fName, data)
+        
         self.journal.O(f'{self.name}.save: done')
         
     #--------------------------------------------------------------------------
@@ -190,6 +210,24 @@ class TPlanet:
         "Loads planet from disk file"
 
         self.journal.I(f'{self.name}.load:')
+        
+        #----------------------------------------------------------------------
+        # Nacitam json z disku
+        #----------------------------------------------------------------------
+        data = gen.loadJson(self.journal, self.fName)
+        
+        #----------------------------------------------------------------------
+        # Vygenerujem cistu planetu rows*cols
+        #----------------------------------------------------------------------
+        self.generate(data['rows'], data['cols'])
+        
+        #----------------------------------------------------------------------
+        # Updatnem parametre tiles podla data
+        #----------------------------------------------------------------------
+        self.period = data['period']
+        
+        for tileId, tileObj in self.tiles.items():
+            tileObj.fromJson( data[tileId] )
         
         self.journal.O(f'{self.name}.load: done')
         

@@ -42,8 +42,10 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Internal data
         #----------------------------------------------------------------------
-        self.journal = journal
-        self.planet  = planet
+        self.journal  = journal
+        self.planet   = planet
+        
+        self.lblTiles = {}       # Zoznam  {lblTile: tile}
         
         #----------------------------------------------------------------------
         # Initialisation
@@ -93,7 +95,9 @@ class TPlanetGui(tk.Tk):
         # Lavy panel pre mapu
         #----------------------------------------------------------------------
         self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
-        self.mapShow(self.frame_map)
+        self.frame_map.pack(side='left', fill='both')
+
+#        self.mapShow()
 
         #----------------------------------------------------------------------
         # Vytvorim Menu pre click on Tile / nastavenie height
@@ -243,36 +247,49 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def generate(self):
 
-        #----------------------------------------------------------------------
-        # Odstranim existujuce lblTiles a aj prislusnyFrame
-        #----------------------------------------------------------------------
-        for lblTile in self.lblTiles:
-            lblTile.destroy()
-
-        self.lblTiles.clear()
-        self.frame_map.destroy()
-        
-        #----------------------------------------------------------------------
-        # Zrusim existujucu a vytvorim novu mapu planety
-        #----------------------------------------------------------------------
         self.planet.generate( int(self.str_rows.get()), int(self.str_cols.get()) )
-    
-        #----------------------------------------------------------------------
-        # Vykreslim novu mapu planety
-        #----------------------------------------------------------------------
-        self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
-        self.mapShow(self.frame_map)
+        self.mapShow()
         
     #--------------------------------------------------------------------------
     def load(self):
         
-        pass
+        #----------------------------------------------------------------------
+        # Zistim, kam mam zapisat
+        #----------------------------------------------------------------------
+        fileName = filedialog.askopenfilename(
+            title      = 'Metadata file',
+            initialdir = self.planet.fName,
+            filetypes  = (('json files', '*.json'), ('All files', '*.*'))
+            )
+ 
+        if fileName == '': return
+        
+        #----------------------------------------------------------------------
+        # Nacitanie metadat
+        #----------------------------------------------------------------------
+        self.setStatus(f'Loading planet from {fileName}')
+        self.planet.fName = fileName
+        self.planet.load()
 
+        self.mapShow()
+         
     #--------------------------------------------------------------------------
     def save(self):
         
-        pass
+        #----------------------------------------------------------------------
+        # Zistim, kam mam zapisat
+        #----------------------------------------------------------------------
+        fileName = filedialog.asksaveasfile( mode='w', defaultextension=".json", initialfile = self.planet.fName)
+
+        if fileName is None: return
         
+        #----------------------------------------------------------------------
+        # Nacitanie metadat
+        #----------------------------------------------------------------------
+        self.setStatus(f'Saving planet into {fileName.name}')
+        self.planet.fName = fileName.name
+        self.planet.save()
+         
     #--------------------------------------------------------------------------
     def tabSimulShow(self):
        
@@ -307,27 +324,30 @@ class TPlanetGui(tk.Tk):
     #==========================================================================
     # Lavy panel pre mapu
     #--------------------------------------------------------------------------
-    def mapShow(self, frm):
+    def mapShow(self):
        
         #----------------------------------------------------------------------
-        # Vykreslenie frame
+        # Odstranim existujuce lblTiles
         #----------------------------------------------------------------------
-        frm.pack(side='left', fill='both')
-       
+        for lblTile in self.lblTiles:
+            lblTile.destroy()
+
+        self.lblTiles.clear()
+        
         #----------------------------------------------------------------------
-        # Konfiguracia gridu podla rows * cols
+        # Re-Konfiguracia gridu podla rows * cols
         #----------------------------------------------------------------------
+        self.frame_map.grid_forget()
+        
         for row in range(self.planet.rows):
-            frm.rowconfigure(row, weight=1)
+            self.frame_map.rowconfigure(row, weight=1)
       
         for col in range(self.planet.cols):
-            frm.columnconfigure(col, weight=1)
+            self.frame_map.columnconfigure(col, weight=1)
             
         #----------------------------------------------------------------------
         # Vytvorenie rows * cols tiles
         #----------------------------------------------------------------------
-        self.lblTiles = {}
-        
         for row in range(self.planet.rows):
             for col in range(self.planet.cols):
                 
@@ -337,7 +357,7 @@ class TPlanetGui(tk.Tk):
                 bcColor = lib.getHeightColor(height)
             
                 # Vytvorim label na zobrazenie Tile
-                lblTile = ttk.Label(frm, relief=tk.RAISED, text=self.tileText(row, col, height), cursor='hand2')
+                lblTile = ttk.Label(self.frame_map, relief=tk.RAISED, text=self.tileText(row, col, height), cursor='hand2')
                 lblTile.configure(background=bcColor)
                 lblTile.bind( '<Button-1>', self.tileClick)
                 lblTile.grid(row=row, column=col, sticky='nwse')

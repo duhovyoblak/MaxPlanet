@@ -101,16 +101,28 @@ class TTile:
 
         self.journal.I(f'{self.tileId}.toJson:')
         
+        data = {}
+        
+        data['tileId' ] = self.tileId   # ID tile
+        data['height' ] = self.height   # Priemerna vyska tile nad morom
+        data['row'    ] = self.row      # Pozicia tile - riadok
+        data['col'    ] = self.col      # Pozicia tile - stlpec
+        data['history'] = self.history  # Historia tile [{'agrState':agrState, 'tribes':tribes}]
+        
         self.journal.O(f'{self.tileId}.toJson: done')
         
+        return data
+        
     #--------------------------------------------------------------------------
-    def fromJson(self, json):
+    def fromJson(self, data):
         "Updates tile from json structure"
 
         self.journal.I(f'{self.tileId}.fromJson:')
         
-        self.journal.O(f'{self.tileId}.fromJson: done')
+        self.height  = data['height' ]
+        self.history = data['history']
         
+        self.journal.O(f'{self.tileId}.fromJson: done')
         
 #------------------------------------------------------------------------------
 print('TTile ver 0.01')
