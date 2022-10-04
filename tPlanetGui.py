@@ -36,7 +36,7 @@ class TPlanetGui(tk.Tk):
         #iniciatizazia tk.Tk
         #----------------------------------------------------------------------
         super().__init__()
-        self.user    = os.getlogin()
+        self.user    = 'max'
         self.version = '0.01'
 
         #----------------------------------------------------------------------
