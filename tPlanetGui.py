@@ -210,39 +210,45 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
 
         lbl_gen1 = ttk.Label(frm, relief=tk.FLAT, text='New Planet for')
-        lbl_gen1.grid(row=1, column=1, sticky='e')
+        lbl_gen1.grid(row=0, column=1, sticky='e')
        
         self.str_rows = tk.StringVar(value=self.planet.rows)
         spin_rows = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_rows, wrap=True, width=3)
-        spin_rows.grid(row=1, column=2)
+        spin_rows.grid(row=0, column=2)
        
         lbl_gen2 = ttk.Label(frm, relief=tk.FLAT, text='rows  and' )
-        lbl_gen2.grid(row=1, column=3)
+        lbl_gen2.grid(row=0, column=3)
 
         self.str_cols = tk.StringVar(value=self.planet.cols)
         spin_cols = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_cols, wrap=True, width=3)
-        spin_cols.grid(row=1, column=4)
+        spin_cols.grid(row=0, column=4)
        
         lbl_gen3 = ttk.Label(frm, relief=tk.FLAT, text='columns' )
-        lbl_gen3.grid(row=1, column=5)
+        lbl_gen3.grid(row=0, column=5)
 
         btn_gen = ttk.Button(frm, text='Generate now', command=self.generate)
-        btn_gen.grid(row=1, column=8, sticky='we')
+        btn_gen.grid(row=0, column=8, sticky='we')
         
         separator1 = ttk.Separator(frm, orient='horizontal')
-        separator1.grid(row=2, column=1, columnspan=8, sticky='we')       
+        separator1.grid(row=1, column=1, columnspan=8, sticky='we')       
         
         #----------------------------------------------------------------------
         # Load & Save Buttons
         #----------------------------------------------------------------------
         btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
-        btn_load.grid(row=3, column=8, sticky='we')
+        btn_load.grid(row=2, column=8, sticky='we')
         
         btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
-        btn_save.grid(row=4, column=8, sticky='we')
+        btn_save.grid(row=3, column=8, sticky='we')
         
         separator2 = ttk.Separator(frm, orient='horizontal')
-        separator2.grid(row=5, column=1, columnspan=8, sticky='we')       
+        separator2.grid(row=4, column=1, columnspan=8, sticky='we')       
+        
+        #----------------------------------------------------------------------
+        # Edit Tile
+        #----------------------------------------------------------------------
+        self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='I will work with Tile' )
+        self.lbl_tile.grid(row=5, column=1, columnspan=8)
         
     #--------------------------------------------------------------------------
     def generate(self):
@@ -359,14 +365,15 @@ class TPlanetGui(tk.Tk):
                 # Vytvorim label na zobrazenie Tile
                 lblTile = ttk.Label(self.frame_map, relief=tk.RAISED, text=self.tileText(row, col, height), cursor='hand2')
                 lblTile.configure(background=bcColor)
-                lblTile.bind( '<Button-1>', self.tileClick)
+                lblTile.bind( '<Button-1>', self.tileLeftClick)
+                lblTile.bind( '<Button-3>', self.tileRightClick)
                 lblTile.grid(row=row, column=col, sticky='nwse')
                 
                 # Ulozim si vazbu {lblTile: Tile}
                 self.lblTiles[lblTile] = tile
             
     #--------------------------------------------------------------------------
-    def tileClick(self, event):
+    def tileLeftClick(self, event):
         
         #----------------------------------------------------------------------
         # Zistim podla eventu, na ktoru lblTile som vlastne clickol
@@ -375,7 +382,24 @@ class TPlanetGui(tk.Tk):
         
         # Pre istotu si vypisem nazov tile, ktora je spojena s lblTile
         tile = self.lblTiles[self.lblTileSelected]
-        self.setStatus(f'tileClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
+        self.setStatus(f'tileLeftClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
+    
+        # Zobraz vlastnosti Tile
+        self.lbl_tile['text'] = f'I will work with {tile.tileId} with height {tile.height} m'
+        
+        
+
+    #--------------------------------------------------------------------------
+    def tileRightClick(self, event):
+        
+        #----------------------------------------------------------------------
+        # Zistim podla eventu, na ktoru lblTile som vlastne clickol
+        #----------------------------------------------------------------------
+        self.lblTileSelected = event.widget
+        
+        # Pre istotu si vypisem nazov tile, ktora je spojena s lblTile
+        tile = self.lblTiles[self.lblTileSelected]
+        self.setStatus(f'tileRightClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
     
         #nakoniec otvor popup menu
         try    : self.tileMenu.tk_popup(event.x_root, event.y_root)
