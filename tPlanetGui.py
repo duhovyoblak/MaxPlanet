@@ -43,9 +43,11 @@ class TPlanetGui(tk.Tk):
         # Internal data
         #----------------------------------------------------------------------
         self.journal  = journal
-        self.planet   = planet
+        self.planet   = planet              # Objekt Planeta
+        self.lblTiles     = {}              # Zoznam  {lblTile: tile}
         
-        self.lblTiles = {}       # Zoznam  {lblTile: tile}
+        self.tab_selected = 0               # Vybrany tab EDIT/TRIBE/SIMUL
+        self.str_show     = tk.StringVar()  # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
         
         #----------------------------------------------------------------------
         # Initialisation
@@ -97,7 +99,7 @@ class TPlanetGui(tk.Tk):
         self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
         self.frame_map.pack(side='left', fill='both')
 
-#        self.mapShow()
+        self.mapCreate()
 
         #----------------------------------------------------------------------
         # Vytvorim Menu pre click on Tile / nastavenie height
@@ -154,7 +156,6 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # TABS as ttk.Notebook
         #----------------------------------------------------------------------
-        self.tab_selected = 0
        
         self.tabs = ttk.Notebook(frame_tool, style='TNotebook')
         self.tabs.pack(expand=True, fill='both')
@@ -162,6 +163,7 @@ class TPlanetGui(tk.Tk):
        
         # Vytkreslenie jednotlivych tabs
         self.tabEditShow()
+        self.tabTribeShow()
         self.tabSimulShow()
    
         self.tabs.bind('<<NotebookTabChanged>>', self.tabChanged)
@@ -235,8 +237,18 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Load & Save Buttons
         #----------------------------------------------------------------------
+        lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
+        lbl_show.grid(row=2, column=2, sticky='ws')
+
+        cb_show = ttk.Combobox(frm, textvariable=self.str_show)
+        cb_show['values'] = ['HEIGHT','POPULATION','KNOWLEDGE','PREFERENCES']
+        self.str_show.set('HEIGHT')
+        cb_show['state'] = 'readonly'
+        cb_show.bind('<<ComboboxSelected>>', self.showChanged)
+        cb_show.grid(row=3, column=2, sticky='w')
+
         btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
-        btn_load.grid(row=2, column=8, sticky='we')
+        btn_load.grid(row=3, column=4, sticky='we')
         
         btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
         btn_save.grid(row=3, column=8, sticky='we')
@@ -248,12 +260,20 @@ class TPlanetGui(tk.Tk):
         # Edit Tile
         #----------------------------------------------------------------------
         self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='I will work with Tile' )
-        self.lbl_tile.grid(row=5, column=1, columnspan=8)
+        self.lbl_tile.grid(row=4, column=1, columnspan=8)
+        
+
         
     #--------------------------------------------------------------------------
     def generate(self):
 
         self.planet.generate( int(self.str_rows.get()), int(self.str_cols.get()) )
+        self.mapCreate()
+        
+    #--------------------------------------------------------------------------
+    def showChanged(self, event):
+        
+        self.setStatus(f'Selected show is {self.str_show.get()}')
         self.mapShow()
         
     #--------------------------------------------------------------------------
@@ -277,7 +297,7 @@ class TPlanetGui(tk.Tk):
         self.planet.fName = fileName
         self.planet.load()
 
-        self.mapShow()
+        self.mapCreate()
          
     #--------------------------------------------------------------------------
     def save(self):
@@ -296,6 +316,38 @@ class TPlanetGui(tk.Tk):
         self.planet.fName = fileName.name
         self.planet.save()
          
+    #--------------------------------------------------------------------------
+    def tabTribeShow(self):
+       
+        #----------------------------------------------------------------------
+        # Vytvorim frame a skonfigurujem grid
+        #----------------------------------------------------------------------
+        frm = ttk.Frame(self.tabs)
+
+        frm.columnconfigure( 0, weight=1)
+        frm.columnconfigure( 1, weight=1)
+        frm.columnconfigure( 2, weight=1)
+        frm.columnconfigure( 3, weight=1)
+        frm.columnconfigure( 4, weight=1)
+        frm.columnconfigure( 5, weight=1)
+        frm.columnconfigure( 6, weight=1)
+        frm.columnconfigure( 7, weight=1)
+        frm.columnconfigure( 8, weight=1)
+        frm.columnconfigure( 9, weight=1)
+       
+        frm.rowconfigure   (0, weight=1)
+        frm.rowconfigure   (1, weight=1)
+        frm.rowconfigure   (2, weight=1)
+        frm.rowconfigure   (3, weight=1)
+        frm.rowconfigure   (4, weight=1)
+        frm.rowconfigure   (5, weight=1)
+        frm.rowconfigure   (6, weight=1)
+        frm.rowconfigure   (7, weight=1)
+        frm.rowconfigure   (8, weight=1)
+ 
+        # Vlozim frame do Tabs       
+        self.tabs.add(frm, text='Tribes')
+
     #--------------------------------------------------------------------------
     def tabSimulShow(self):
        
@@ -330,7 +382,7 @@ class TPlanetGui(tk.Tk):
     #==========================================================================
     # Lavy panel pre mapu
     #--------------------------------------------------------------------------
-    def mapShow(self):
+    def mapCreate(self):
        
         #----------------------------------------------------------------------
         # Odstranim existujuce lblTiles
@@ -357,20 +409,38 @@ class TPlanetGui(tk.Tk):
         for row in range(self.planet.rows):
             for col in range(self.planet.cols):
                 
-                # Zistim vlastnosti Tile na pozicii row, col
+                # Zistim ktora Tile je na pozicii row, col
                 tile    = self.planet.getTile(row, col)
-                height  = tile.height
-                bcColor = lib.getHeightColor(height)
-            
+
                 # Vytvorim label na zobrazenie Tile
-                lblTile = ttk.Label(self.frame_map, relief=tk.RAISED, text=self.tileText(row, col, height), cursor='hand2')
-                lblTile.configure(background=bcColor)
+                lblTile = ttk.Label(self.frame_map, relief=tk.RAISED, text=self.tileText(row, col), cursor='hand2')
+                lblTile.configure(background='white')
                 lblTile.bind( '<Button-1>', self.tileLeftClick)
                 lblTile.bind( '<Button-3>', self.tileRightClick)
                 lblTile.grid(row=row, column=col, sticky='nwse')
                 
                 # Ulozim si vazbu {lblTile: Tile}
                 self.lblTiles[lblTile] = tile
+
+        #----------------------------------------------------------------------
+        # Vykreslenie mapy
+        #----------------------------------------------------------------------
+        self.mapShow()
+            
+    #--------------------------------------------------------------------------
+    def mapShow(self):
+       
+        #----------------------------------------------------------------------
+        # Prejdem vsetky lblTile v lblTiles
+        #----------------------------------------------------------------------
+        for lblTile in self.lblTiles:
+                
+            # Zistim vlastnosti Tile na pozicii row, col
+            tile    = self.lblTiles[lblTile]
+            bcColor = self.tileColor(tile)
+            
+            # Vykreslim label na zobrazenie Tile
+            lblTile.configure(background=bcColor)
             
     #--------------------------------------------------------------------------
     def tileLeftClick(self, event):
@@ -387,8 +457,6 @@ class TPlanetGui(tk.Tk):
         # Zobraz vlastnosti Tile
         self.lbl_tile['text'] = f'I will work with {tile.tileId} with height {tile.height} m'
         
-        
-
     #--------------------------------------------------------------------------
     def tileRightClick(self, event):
         
@@ -419,10 +487,10 @@ class TPlanetGui(tk.Tk):
         
         # Nastavim vysku tile
         tile.height = height
-        
-       # Updatnem na obrazovke lblTile
-        self.lblTileSelected.configure( background = lib.getHeightColor(height)      )
-        self.lblTileSelected.configure( text       = self.tileText(row, col, height) )
+
+        # Updatnem na obrazovke lblTile
+        self.lblTileSelected.configure( background = self.tileColor(tile)    )
+        self.lblTileSelected.configure( text       = self.tileText(row, col) )
         
     #--------------------------------------------------------------------------
     def tileTribes(self):
@@ -430,10 +498,22 @@ class TPlanetGui(tk.Tk):
         pass
         
     #--------------------------------------------------------------------------
-    def tileText(self, row, col, height):
+    def tileColor(self, tile):
+        
+        show = self.str_show.get()
+                
+        if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height     )
+        elif show == 'POPULATION' : bcColor = lib.getPopulColor( tile.population )
+        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor( tile.knowledge  )
+        elif show == 'PREFERENCES': bcColor = lib.getPrefsColor( tile.preferences)
+        else                      : bcColor = 'black'
+
+        return bcColor
+    
+    #--------------------------------------------------------------------------
+    def tileText(self, row, col):
         
         return f'{str(row).rjust(2)}x{str(col).rjust(2)}'
-#        return f' {str(row).rjust(3)}x{str(col).rjust(3)}x{str(height).rjust(4)} '
         
     #==========================================================================
     # Utility

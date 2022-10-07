@@ -32,11 +32,15 @@ class TTile:
         self.journal.I('TTile.constructor')
         
         self.tileId     = tileId      # ID tile
-        self.height     = height      # Priemerna vyska tile nad morom
         self.row        = 0           # Pozicia tile - riadok
         self.col        = 0           # Pozicia tile - stlpec
         self.neighs     = []          # Zoznam geografickych susedov tile [tileObj]
         self.history    = []          # Historia tile [{'agrState':agrState, 'tribes':tribes}]
+        
+        self.height     = height      # Priemerna vyska tile nad morom
+        self.population = {}          # Agregovana populacia na tile
+        self.knowledge  = {}          # Agregovane vedomosti na tile
+        self.preferences= {}          # Agregovane preferencie na tile
         
         # Zaradim novu tile do zoznamu tiles
         self.tiles[self.tileId] = self
