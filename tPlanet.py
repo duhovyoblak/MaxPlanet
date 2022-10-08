@@ -83,7 +83,7 @@ class TPlanet:
         self.rows   = 0
         self.cols   = 0
         
-        self.tiles.clear()
+        for tile in self.tiles.values(): tile.clear()
         
         self.journal.O(f'{self.name}.clear: done')
         
@@ -131,6 +131,14 @@ class TPlanet:
         
         self.journal.O(f'{self.name}.generate: done')
     
+    #--------------------------------------------------------------------------
+    def getMaxPeriod(self):
+        "Returns max available period in history"
+        
+        key = list(self.tiles.keys())[0]
+        
+        return len(self.tiles[key].history) - 1
+        
     #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------

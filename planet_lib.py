@@ -43,6 +43,21 @@ heights = {
     3000: {'color':'#ffffff', 'agrSource': 0, 'indSource': 0.01}
 }
 
+#------------------------------------------------------------------------------
+tribes = { 
+       'Green Nation': {'color'     : {'red':0,   'green':1,   'blue':0   }, 
+                        'preference': {'agr':0.7, 'ind'  :0.2, 'war' :0.1 },
+                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       },
+       'Blue Nation' : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
+                        'preference': {'agr':0.2, 'ind'  :0.6, 'war' :0.2 },
+                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       },
+       'Red Nation'  : {'color'     : {'red':1,   'green':0,   'blue':0   }, 
+                        'preference': {'agr':0.2, 'ind'  :0.3, 'war' :0.5 },
+                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       }
+}
 #==============================================================================
 # Functions
 #------------------------------------------------------------------------------
@@ -55,17 +70,17 @@ def getHeightColor(height):
     return '#000000'
 
 #------------------------------------------------------------------------------
-def getPopulColor(population):
+def getPopulColor(tribes):
     
     return 'red'
 
 #------------------------------------------------------------------------------
-def getKnowlColor(knowledge):
+def getKnowlColor(tribes):
     
     return 'blue'
 
 #------------------------------------------------------------------------------
-def getPrefsColor(preferences):
+def getPrefsColor(tribes):
     
     return 'green'
     

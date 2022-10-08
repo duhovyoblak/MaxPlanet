@@ -42,12 +42,18 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Internal data
         #----------------------------------------------------------------------
-        self.journal  = journal
-        self.planet   = planet              # Objekt Planeta
-        self.lblTiles     = {}              # Zoznam  {lblTile: tile}
+        self.journal   = journal
+        self.planet    = planet              # Objekt Planeta
+        self.lblTiles  = {}                  # Zoznam tiles {lblTile: tile}
+        self.tribes    = lib.tribes          # Zoznam vsetky tribes
         
-        self.tab_selected = 0               # Vybrany tab EDIT/TRIBE/SIMUL
-        self.str_show     = tk.StringVar()  # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
+        self.tab_selected = 0                # Vybrany tab EDIT/TRIBE/SIMUL
+        
+        self.lblTileSelected = None          # lblTile s ktorou pracujem
+        self.dbl_period = tk.DoubleVar()     # Perioda historie s ktorou pracujem
+        self.str_show   = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_tribeT = tk.StringVar()     # Tribe s ktorym pracujem na Tile
+        self.str_tribeA = tk.StringVar()     # Tribe ktore chcem pridat na Tile
         
         #----------------------------------------------------------------------
         # Initialisation
@@ -194,15 +200,22 @@ class TPlanetGui(tk.Tk):
         frm.columnconfigure( 8, weight=1)
         frm.columnconfigure( 9, weight=1)
        
-        frm.rowconfigure   (0, weight=1)
-        frm.rowconfigure   (1, weight=1)
-        frm.rowconfigure   (2, weight=1)
-        frm.rowconfigure   (3, weight=1)
-        frm.rowconfigure   (4, weight=1)
-        frm.rowconfigure   (5, weight=1)
-        frm.rowconfigure   (6, weight=1)
-        frm.rowconfigure   (7, weight=1)
-        frm.rowconfigure   (8, weight=1)
+        frm.rowconfigure   ( 0, weight=1)
+        frm.rowconfigure   ( 1, weight=1)
+        frm.rowconfigure   ( 2, weight=1)
+        frm.rowconfigure   ( 3, weight=1)
+        frm.rowconfigure   ( 4, weight=1)
+        frm.rowconfigure   ( 5, weight=1)
+        frm.rowconfigure   ( 6, weight=1)
+        frm.rowconfigure   ( 7, weight=1)
+        frm.rowconfigure   ( 8, weight=1)
+        frm.rowconfigure   ( 9, weight=1)
+        frm.rowconfigure   (10, weight=1)
+        frm.rowconfigure   (11, weight=1)
+        frm.rowconfigure   (12, weight=1)
+        frm.rowconfigure   (13, weight=1)
+        frm.rowconfigure   (14, weight=1)
+        frm.rowconfigure   (15, weight=1)
  
         # Vlozim frame do Tabs       
         self.tabs.add(frm, text='Edit Planet')
@@ -210,6 +223,11 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Generate new geography
         #----------------------------------------------------------------------
+
+        lbl_genL = ttk.Label(frm, relief=tk.FLAT, text='.')
+        lbl_genL.grid(row=0, column=0, sticky='w')
+        lbl_genR = ttk.Label(frm, relief=tk.FLAT, text='.')
+        lbl_genR.grid(row=0, column=9, sticky='e')
 
         lbl_gen1 = ttk.Label(frm, relief=tk.FLAT, text='New Planet for')
         lbl_gen1.grid(row=0, column=1, sticky='e')
@@ -235,34 +253,78 @@ class TPlanetGui(tk.Tk):
         separator1.grid(row=1, column=1, columnspan=8, sticky='we')       
         
         #----------------------------------------------------------------------
-        # Load & Save Buttons
+        # Period, Show, Load & Save Buttons
         #----------------------------------------------------------------------
-        lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
-        lbl_show.grid(row=2, column=2, sticky='ws')
+        lbl_period = ttk.Label(frm, relief=tk.FLAT, text='I will edit Period:' )
+        lbl_period.grid(row=2, column=1, sticky='ws')
 
+        self.sld_period = ttk.Scale(frm, from_=0, to=self.planet.getMaxPeriod(), orient='horizontal', 
+                                    variable=self.dbl_period, command=self.periodChanged)
+        self.sld_period.grid(row=3, column=1, sticky='nwe')
+
+        lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
+        lbl_show.grid(row=2, column=3, sticky='ws')
+
+        self.str_show.set('HEIGHT')
         cb_show = ttk.Combobox(frm, textvariable=self.str_show)
         cb_show['values'] = ['HEIGHT','POPULATION','KNOWLEDGE','PREFERENCES']
-        self.str_show.set('HEIGHT')
         cb_show['state'] = 'readonly'
         cb_show.bind('<<ComboboxSelected>>', self.showChanged)
-        cb_show.grid(row=3, column=2, sticky='w')
+        cb_show.grid(row=3, column=3, sticky='nwe')
 
         btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
-        btn_load.grid(row=3, column=4, sticky='we')
+        btn_load.grid(row=3, column=5, sticky='nwe')
         
         btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
-        btn_save.grid(row=3, column=8, sticky='we')
+        btn_save.grid(row=3, column=8, sticky='nwe')
         
         separator2 = ttk.Separator(frm, orient='horizontal')
         separator2.grid(row=4, column=1, columnspan=8, sticky='we')       
         
         #----------------------------------------------------------------------
-        # Edit Tile
+        # Edit Tribes on the Tile
         #----------------------------------------------------------------------
-        self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='I will work with Tile' )
-        self.lbl_tile.grid(row=4, column=1, columnspan=8)
+        self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='Tile' )
+        self.lbl_tile.grid(row=5, column=1, columnspan=3, sticky='w')
         
+        #----------------------------------------------------------------------
+        # Tribes existing on the Tile
+        
+        lbl_trbT = ttk.Label(frm, relief=tk.FLAT, text='Tribes on the Tile:' )
+        lbl_trbT.grid(row=6, column=1, sticky='ws')
 
+        # self.str_show.set('HEIGHT')
+        self.cb_trbT = ttk.Combobox(frm, textvariable=self.str_tribeT)
+        self.cb_trbT['values'] = []
+        self.cb_trbT['state']  = 'readonly'
+        self.cb_trbT.bind('<<ComboboxSelected>>', self.tribeTChanged)
+        self.cb_trbT.grid(row=7, column=1, sticky='wn')
+
+        #----------------------------------------------------------------------
+        # Tribes existing on the Tile already
+        
+        lbl_trbA = ttk.Label(frm, relief=tk.FLAT, text='Add Tribe to the Tile:' )
+        lbl_trbA.grid(row=8, column=1, sticky='ws')
+
+        # self.str_show.set('HEIGHT')
+        self.cb_trbA = ttk.Combobox(frm, textvariable=self.str_tribeA)
+        self.cb_trbA['values'] = []
+        self.cb_trbA['state']  = 'readonly'
+        self.cb_trbA.bind('<<ComboboxSelected>>', self.tribeAChanged)
+        self.cb_trbA.grid(row=9, column=1, sticky='wn')
+        
+        #----------------------------------------------------------------------
+        # Tribes I want add to the Tile
+        
+        lbl_trbAD = ttk.Label(frm, relief=tk.FLAT, text="With population's density" )
+        lbl_trbAD.grid(row=8, column=3, sticky='ws')
+
+        self.str_densAD = tk.StringVar(value=self.planet.rows)
+        spin_trbAD = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_densAD, wrap=True, width=3)
+        spin_trbAD.grid(row=9, column=3, sticky='wn')
+
+        btn_trbAD = ttk.Button(frm, text='Add tribe to the Tile', command=self.addTribe)
+        btn_trbAD.grid(row=9, column=8, sticky='nwe')
         
     #--------------------------------------------------------------------------
     def generate(self):
@@ -271,10 +333,53 @@ class TPlanetGui(tk.Tk):
         self.mapCreate()
         
     #--------------------------------------------------------------------------
+    def periodChanged(self, event):
+        
+        self.setStatus(f'Selected period is {self.sld_period.get()}')
+        self.mapShow()
+        
+    #--------------------------------------------------------------------------
     def showChanged(self, event):
         
         self.setStatus(f'Selected show is {self.str_show.get()}')
         self.mapShow()
+        
+    #--------------------------------------------------------------------------
+    def tribeTChanged(self, event):
+        
+        self.setStatus(f'Selected show is {self.str_tribeT.get()}')
+        self.mapShow()
+        
+    #--------------------------------------------------------------------------
+    def tribeAChanged(self, event):
+        
+        self.setStatus(f'Selected show is {self.str_tribeA.get()}')
+        self.mapShow()
+        
+    #--------------------------------------------------------------------------
+    def addTribe(self):
+        
+        if self.lblTileSelected is None:
+            self.setStatus('ERROR No Tile was selected')
+            return
+
+        tile   = self.lblTiles[self.lblTileSelected]
+        
+        if tile.height==0:
+            self.setStatus('ERROR You can not add tribe into sea title')
+            return
+
+        tribeId  = self.str_tribeA.get()
+        if tribeId is None or tribeId=='':
+            self.setStatus('ERROR No Tribe was selected')
+            return
+        
+        period = round(self.sld_period.get())
+        dens   = self.str_densAD.get()
+
+        self.setStatus(f"I will add Tribe '{tribeId}' into tile {tile.tileId} in period '{period}' with density '{dens}'")
+        
+        tile.addTribe(tribeId, self.tribes[tribeId], period, dens)
         
     #--------------------------------------------------------------------------
     def load(self):
@@ -423,10 +528,16 @@ class TPlanetGui(tk.Tk):
                 self.lblTiles[lblTile] = tile
 
         #----------------------------------------------------------------------
+        # Vycistenie selected premennych
+        #----------------------------------------------------------------------
+        self.lblTileSelected = None
+        
+        #----------------------------------------------------------------------
         # Vykreslenie mapy
         #----------------------------------------------------------------------
         self.mapShow()
-            
+        self.showTileProterties()
+                 
     #--------------------------------------------------------------------------
     def mapShow(self):
        
@@ -443,19 +554,34 @@ class TPlanetGui(tk.Tk):
             lblTile.configure(background=bcColor)
             
     #--------------------------------------------------------------------------
+    def showTileProterties(self):
+        
+        if self.lblTileSelected is None:
+            self.lbl_tile['text'] = 'No Tile was selected'
+            self.cb_trbT['values'] = []
+            self.cb_trbA['values'] = []
+            return
+
+        tile   = self.lblTiles[self.lblTileSelected]
+        
+        self.lbl_tile['text'] = f'{tile.tileId} with height {tile.height} m'
+        
+        self.cb_trbT['values'] = list(tile.history[-1]['tribes'].keys())
+        
+        self.cb_trbA['values'] = list(self.tribes.keys())
+        
+    #--------------------------------------------------------------------------
     def tileLeftClick(self, event):
         
         #----------------------------------------------------------------------
         # Zistim podla eventu, na ktoru lblTile som vlastne clickol
         #----------------------------------------------------------------------
         self.lblTileSelected = event.widget
-        
-        # Pre istotu si vypisem nazov tile, ktora je spojena s lblTile
-        tile = self.lblTiles[self.lblTileSelected]
+        tile   = self.lblTiles[self.lblTileSelected]
         self.setStatus(f'tileLeftClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
-    
+        
         # Zobraz vlastnosti Tile
-        self.lbl_tile['text'] = f'I will work with {tile.tileId} with height {tile.height} m'
+        self.showTileProterties()
         
     #--------------------------------------------------------------------------
     def tileRightClick(self, event):
@@ -464,12 +590,13 @@ class TPlanetGui(tk.Tk):
         # Zistim podla eventu, na ktoru lblTile som vlastne clickol
         #----------------------------------------------------------------------
         self.lblTileSelected = event.widget
-        
-        # Pre istotu si vypisem nazov tile, ktora je spojena s lblTile
-        tile = self.lblTiles[self.lblTileSelected]
+        tile   = self.lblTiles[self.lblTileSelected]
         self.setStatus(f'tileRightClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
-    
-        #nakoniec otvor popup menu
+        
+        # Zobraz vlastnosti Tile
+        self.showTileProterties()
+
+        #nakoniec otvor popup menu pre nastavenie height
         try    : self.tileMenu.tk_popup(event.x_root, event.y_root)
         finally: self.tileMenu.grab_release()
 
@@ -498,14 +625,19 @@ class TPlanetGui(tk.Tk):
         pass
         
     #--------------------------------------------------------------------------
-    def tileColor(self, tile):
+    def tileColor(self, tile, period=-1):
         
-        show = self.str_show.get()
+        # Ak je to more, zobrazim more
+        if tile.height==0: return lib.getHeightColor(0)
+        
+        # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
+        show   = self.str_show.get()
+        tribes = tile.history[period]['tribes']
                 
-        if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height     )
-        elif show == 'POPULATION' : bcColor = lib.getPopulColor( tile.population )
-        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor( tile.knowledge  )
-        elif show == 'PREFERENCES': bcColor = lib.getPrefsColor( tile.preferences)
+        if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
+        elif show == 'POPULATION' : bcColor = lib.getPopulColor(      tribes)
+        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor(      tribes)
+        elif show == 'PREFERENCES': bcColor = lib.getPrefsColor(      tribes)
         else                      : bcColor = 'black'
 
         return bcColor

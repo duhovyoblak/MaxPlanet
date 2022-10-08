@@ -31,16 +31,13 @@ class TTile:
 
         self.journal.I('TTile.constructor')
         
-        self.tileId     = tileId      # ID tile
-        self.row        = 0           # Pozicia tile - riadok
-        self.col        = 0           # Pozicia tile - stlpec
-        self.neighs     = []          # Zoznam geografickych susedov tile [tileObj]
-        self.history    = []          # Historia tile [{'agrState':agrState, 'tribes':tribes}]
-        
-        self.height     = height      # Priemerna vyska tile nad morom
-        self.population = {}          # Agregovana populacia na tile
-        self.knowledge  = {}          # Agregovane vedomosti na tile
-        self.preferences= {}          # Agregovane preferencie na tile
+        self.tileId     = tileId          # ID tile
+        self.row        = 0               # Pozicia tile - riadok
+        self.col        = 0               # Pozicia tile - stlpec
+        self.neighs     = []              # Zoznam geografickych susedov tile [tileObj]
+
+        self.height     = height          # Priemerna vyska tile nad morom
+        self.history    = [{'tribes':{}, 'agrState':{}}] # Historia tile
         
         # Zaradim novu tile do zoznamu tiles
         self.tiles[self.tileId] = self
@@ -78,21 +75,38 @@ class TTile:
     #==========================================================================
     # API for GUI
     #--------------------------------------------------------------------------
+    def clear(self):
+        "Clear state of Tile"
+    
+        self.journal.I(f'{self.tileId}.clear:')
+        
+        self.history.clear()
+        self.history.append( {'tribes':{}, 'agrState':{}} )
+        
+        self.journal.O(f'{self.tileId}.clear: done')
+        
+    #--------------------------------------------------------------------------
     def reset(self):
         "Resets state of Tile into begining state"
     
         self.journal.I(f'{self.tileId}.reset:')
         
-        # Ak existuje nejaka historia, zrusim ju do zakladneho stavu
-        if len(self.history) > 0:
-            begState = self.history[0]
-            self.history.clear()
-            self.history.append(begState)
+        # Vratim historiu ju do zakladneho stavu
+        begState = self.history[0]
+        self.history.clear()
+        self.history.append(begState)
         
         self.journal.O(f'{self.tileId}.reset: done')
         
     #--------------------------------------------------------------------------
-    
+    def addTribe(self, tribeId, tribeObj, period, dens):
+        
+        self.journal.I(f'{self.tileId}.addTribe:')
+        
+        self.history[0]['tribes'][tribeId] = tribeObj
+        
+        self.journal.O()
+        
     #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------
@@ -124,7 +138,9 @@ class TTile:
         self.journal.I(f'{self.tileId}.fromJson:')
         
         self.height  = data['height' ]
-        self.history = data['history']
+        
+        if 'history' in data.keys() and len(data['history'])>0: 
+            self.history = data['history']
         
         self.journal.O(f'{self.tileId}.fromJson: done')
         
