@@ -23,6 +23,25 @@ class TTile:
     journal = None   # Globalny journal
     tiles   = {}     # Zoznam vsetkych tiles  {tileId: tileObj}
 
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def getDenMax(period):
+        
+        denMax = 0
+        
+        # Prejdem vsetky tiles
+        for tile in TTile.tiles.values():
+        
+            tileSum = 0
+            
+            # Prejdem vsetky tribe na tile pre konkretnu periodu
+            for tribe in tile.history[period]['tribes'].values():
+                tileSum += tribe['density']
+                
+            if tileSum > denMax: denMax = tileSum
+
+        return denMax
+    
     #==========================================================================
     # Constructor & utilities
     #--------------------------------------------------------------------------
@@ -98,6 +117,19 @@ class TTile:
         
         self.journal.O(f'{self.tileId}.reset: done')
         
+    #--------------------------------------------------------------------------
+    def getDenStr(self, period):
+        
+        tribes = self.history[period]['tribes']
+        
+        toRet = 'Density:'
+        for tribeId, tribeObj in tribes.items():
+            
+            toRet += f" {tribeId}:{tribeObj['density']}"
+        
+        if toRet=='Density: ': toRet = 'No tribe here'
+        return toRet
+    
     #--------------------------------------------------------------------------
     def setTribe(self, period, tribeId, tribeObj):
         

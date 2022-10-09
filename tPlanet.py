@@ -135,9 +135,20 @@ class TPlanet:
     def getMaxPeriod(self):
         "Returns max available period in history"
         
-        key = list(self.tiles.keys())[0]
+        key   = list(self.tiles.keys())[0]
+        toRet = len(self.tiles[key].history) - 1
+        self.journal.O(f'{self.name}.getMaxPeriod: is {toRet}')
         
-        return len(self.tiles[key].history) - 1
+        return toRet
+        
+    #--------------------------------------------------------------------------
+    def getMaxDensity(self, period):
+        "Returns max sum of densities per Tile for all Tiles in respective period"
+
+        toRet = TTile.getDenMax(period)
+        self.journal.O(f'{self.name}.getMaxDensity: for period {period} is {toRet}')
+        
+        return toRet
         
     #==========================================================================
     # Internal methods

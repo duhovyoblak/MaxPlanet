@@ -58,6 +58,7 @@ tribes = {
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
                       }
 }
+
 #==============================================================================
 # Functions
 #------------------------------------------------------------------------------
@@ -70,7 +71,7 @@ def getHeightColor(height):
     return '#000000'
 
 #------------------------------------------------------------------------------
-def getPopulColor(tribes):
+def getPopulColor(tribes, denMax):
     
     # Ziskam mix color z populacii vsetkych Tribes
     mix = [0, 0, 0]
@@ -83,8 +84,8 @@ def getPopulColor(tribes):
         mix[1] += (tribe['color']['green'] * tribePopul)
         mix[2] += (tribe['color']['blue' ] * tribePopul)
         
-    # Normalizujem mix na sumu=1
-    mix = normMax(mix)
+    # Normalizujem mix na globalny strop=5000 density
+    mix = normMax(mix, maxVal=denMax)
     
     return rgbToHex(mix[0], mix[1], mix[2])
 
@@ -99,15 +100,8 @@ def getPrefsColor(tribes):
     return 'green'
     
 #------------------------------------------------------------------------------
-def normMax(mix, norma=255):
+def normMax(mix, maxVal, norma=255):
     
-    # Ziskam maximalnu hodnotu mixu
-    maxVal = -999999999
-    for val in mix: 
-        if val>maxVal: maxVal = val
-    
-    if maxVal==0: return mix
-
     # Nomralizujem na normu
     for i in range(len(mix)): mix[i] = mix[i] / maxVal * norma
     
