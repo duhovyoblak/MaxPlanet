@@ -99,17 +99,31 @@ class TTile:
         self.journal.O(f'{self.tileId}.reset: done')
         
     #--------------------------------------------------------------------------
-    def addTribe(self, tribeId, tribeObj, period, dens):
+    def setTribe(self, period, tribeId, tribeObj):
         
-        self.journal.I(f'{self.tileId}.addTribe:')
+        self.journal.I(f'{self.tileId}.setTribe: period {period} tribe {tribeId} ')
         
-        self.history[0]['tribes'][tribeId] = tribeObj
+        print(tribeObj)
+        
+        # Ziskam data z historie
+        dat = self.history[period]
+        
+        # Upravim data podla poziadavky
+        dat['tribes'  ][tribeId] = tribeObj
+        dat['agrState']          = self.aggregate(period)
+        
+        # Zapisem data do historie
+        self.history[period] = dat
         
         self.journal.O()
         
     #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------
+    def aggregate(self, period):
+        "Returns tile aggregates for respective period"
+        
+        return {}
         
     #==========================================================================
     # Persistency methods

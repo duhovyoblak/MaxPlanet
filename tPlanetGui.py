@@ -52,9 +52,10 @@ class TPlanetGui(tk.Tk):
         self.lblTileSelected = None          # lblTile s ktorou pracujem
         self.dbl_period = tk.DoubleVar()     # Perioda historie s ktorou pracujem
         self.str_show   = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
-        self.str_tribeT = tk.StringVar()     # Tribe s ktorym pracujem na Tile
-        self.str_tribeA = tk.StringVar()     # Tribe ktore chcem pridat na Tile
-        
+
+        self.str_tribe  = tk.StringVar()     # Tribe s ktorym pracujem na Tile
+        self.str_dens   = tk.StringVar()     # Hustota polpulacie ktoru chcem nastavit na Tile
+
         #----------------------------------------------------------------------
         # Initialisation
         #----------------------------------------------------------------------
@@ -290,41 +291,28 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Tribes existing on the Tile
         
-        lbl_trbT = ttk.Label(frm, relief=tk.FLAT, text='Tribes on the Tile:' )
-        lbl_trbT.grid(row=6, column=1, sticky='ws')
+        lbl_trb = ttk.Label(frm, relief=tk.FLAT, text='Available Tribes:' )
+        lbl_trb.grid(row=6, column=1, sticky='ws')
 
         # self.str_show.set('HEIGHT')
-        self.cb_trbT = ttk.Combobox(frm, textvariable=self.str_tribeT)
-        self.cb_trbT['values'] = []
-        self.cb_trbT['state']  = 'readonly'
-        self.cb_trbT.bind('<<ComboboxSelected>>', self.tribeTChanged)
-        self.cb_trbT.grid(row=7, column=1, sticky='wn')
+        self.cb_trb = ttk.Combobox(frm, textvariable=self.str_tribe)
+        self.cb_trb['values'] = []
+        self.cb_trb['state']  = 'readonly'
+        self.cb_trb.bind('<<ComboboxSelected>>', self.tribeChanged)
+        self.cb_trb.grid(row=7, column=1, sticky='wn')
 
-        #----------------------------------------------------------------------
-        # Tribes existing on the Tile already
-        
-        lbl_trbA = ttk.Label(frm, relief=tk.FLAT, text='Add Tribe to the Tile:' )
-        lbl_trbA.grid(row=8, column=1, sticky='ws')
+        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="Population's density" )
+        lbl_dens.grid(row=6, column=3, sticky='ws')
 
-        # self.str_show.set('HEIGHT')
-        self.cb_trbA = ttk.Combobox(frm, textvariable=self.str_tribeA)
-        self.cb_trbA['values'] = []
-        self.cb_trbA['state']  = 'readonly'
-        self.cb_trbA.bind('<<ComboboxSelected>>', self.tribeAChanged)
-        self.cb_trbA.grid(row=9, column=1, sticky='wn')
-        
+        spin_dens = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_dens, wrap=True, width=3)
+        spin_dens.grid(row=7, column=3, sticky='nwe')
+
+        btn_trbSet = ttk.Button(frm, text='Set tribe in the Tile', command=self.setTribe)
+        btn_trbSet.grid(row=7, column=8, sticky='nwe')
+
         #----------------------------------------------------------------------
         # Tribes I want add to the Tile
         
-        lbl_trbAD = ttk.Label(frm, relief=tk.FLAT, text="With population's density" )
-        lbl_trbAD.grid(row=8, column=3, sticky='ws')
-
-        self.str_densAD = tk.StringVar(value=self.planet.rows)
-        spin_trbAD = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_densAD, wrap=True, width=3)
-        spin_trbAD.grid(row=9, column=3, sticky='wn')
-
-        btn_trbAD = ttk.Button(frm, text='Add tribe to the Tile', command=self.addTribe)
-        btn_trbAD.grid(row=9, column=8, sticky='nwe')
         
     #--------------------------------------------------------------------------
     def generate(self):
@@ -335,7 +323,7 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def periodChanged(self, event):
         
-        self.setStatus(f'Selected period is {self.sld_period.get()}')
+        self.setStatus(f'Selected period is {round(float(self.sld_period.get()))}')
         self.mapShow()
         
     #--------------------------------------------------------------------------
@@ -345,41 +333,34 @@ class TPlanetGui(tk.Tk):
         self.mapShow()
         
     #--------------------------------------------------------------------------
-    def tribeTChanged(self, event):
+    def tribeChanged(self, event):
         
-        self.setStatus(f'Selected show is {self.str_tribeT.get()}')
+        self.journal.M(f'tribeChanged: Selected Tribe is {self.str_tribe.get()}')
+        self.setStatus(f'Selected Tribe is {self.str_tribe.get()}')
         self.mapShow()
-        
+        self.str_dens.set('')
+   
+        rec = self.getSelectedTribe()
+        if rec['res']=='OK': self.str_dens.set(rec['dens'])
+
     #--------------------------------------------------------------------------
-    def tribeAChanged(self, event):
+    def setTribe(self):
         
-        self.setStatus(f'Selected show is {self.str_tribeA.get()}')
-        self.mapShow()
-        
-    #--------------------------------------------------------------------------
-    def addTribe(self):
-        
-        if self.lblTileSelected is None:
-            self.setStatus('ERROR No Tile was selected')
-            return
+        self.setStatus('setTribe')
 
-        tile   = self.lblTiles[self.lblTileSelected]
-        
-        if tile.height==0:
-            self.setStatus('ERROR You can not add tribe into sea title')
-            return
+        rec = self.getSelectedTribe()
 
-        tribeId  = self.str_tribeA.get()
-        if tribeId is None or tribeId=='':
-            self.setStatus('ERROR No Tribe was selected')
-            return
+        if rec['res']=='OK':
         
-        period = round(self.sld_period.get())
-        dens   = self.str_densAD.get()
-
-        self.setStatus(f"I will add Tribe '{tribeId}' into tile {tile.tileId} in period '{period}' with density '{dens}'")
-        
-        tile.addTribe(tribeId, self.tribes[tribeId], period, dens)
+            tribeObj = rec['tribeObj']
+            tribeObj['density'] = round(float(self.str_dens.get()),2)
+            
+            if rec['tile'].height==0: self.setStatus('I can not set tribe into sea')
+            else: 
+                rec['tile'].setTribe(rec['period'], rec['tribeId'], rec['tribeObj'])
+                self.mapShow()
+            
+        else: self.setStatus(rec['res'])
         
     #--------------------------------------------------------------------------
     def load(self):
@@ -536,7 +517,7 @@ class TPlanetGui(tk.Tk):
         # Vykreslenie mapy
         #----------------------------------------------------------------------
         self.mapShow()
-        self.showTileProterties()
+        self.showTileOptions()
                  
     #--------------------------------------------------------------------------
     def mapShow(self):
@@ -554,21 +535,17 @@ class TPlanetGui(tk.Tk):
             lblTile.configure(background=bcColor)
             
     #--------------------------------------------------------------------------
-    def showTileProterties(self):
+    def showTileOptions(self):
         
         if self.lblTileSelected is None:
             self.lbl_tile['text'] = 'No Tile was selected'
-            self.cb_trbT['values'] = []
-            self.cb_trbA['values'] = []
+            self.cb_trb['values'] = []
             return
 
-        tile   = self.lblTiles[self.lblTileSelected]
+        tile = self.lblTiles[self.lblTileSelected]
         
         self.lbl_tile['text'] = f'{tile.tileId} with height {tile.height} m'
-        
-        self.cb_trbT['values'] = list(tile.history[-1]['tribes'].keys())
-        
-        self.cb_trbA['values'] = list(self.tribes.keys())
+        self.cb_trb['values'] = list(self.tribes.keys())
         
     #--------------------------------------------------------------------------
     def tileLeftClick(self, event):
@@ -578,10 +555,13 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         self.lblTileSelected = event.widget
         tile   = self.lblTiles[self.lblTileSelected]
+        
+        self.journal.M(f'tileLeftClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
         self.setStatus(f'tileLeftClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
         
         # Zobraz vlastnosti Tile
-        self.showTileProterties()
+        self.showTileOptions()
+        self.tribeChanged(event)
         
     #--------------------------------------------------------------------------
     def tileRightClick(self, event):
@@ -594,7 +574,7 @@ class TPlanetGui(tk.Tk):
         self.setStatus(f'tileRightClick: {self.lblTileSelected} => {tile.tileId} with height {tile.height}')
         
         # Zobraz vlastnosti Tile
-        self.showTileProterties()
+        self.showTileOptions()
 
         #nakoniec otvor popup menu pre nastavenie height
         try    : self.tileMenu.tk_popup(event.x_root, event.y_root)
@@ -624,6 +604,8 @@ class TPlanetGui(tk.Tk):
         
         pass
         
+    #==========================================================================
+    # Internal methods
     #--------------------------------------------------------------------------
     def tileColor(self, tile, period=-1):
         
@@ -645,7 +627,47 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def tileText(self, row, col):
         
-        return f'{str(row).rjust(2)}x{str(col).rjust(2)}'
+        return '       '
+#        return f'{str(row).rjust(2)}x{str(col).rjust(2)}'
+        
+    #--------------------------------------------------------------------------
+    def getSelectedTribe(self):
+        
+        res      = 'OK'
+        period   = round(self.sld_period.get())
+        tileId   ='NO Tile'
+        tile     = {}
+        tribeObj = {}
+        dens     = 0
+        
+        #----------------------------------------------------------------------
+        # Kontrola vybranej Tile
+        #----------------------------------------------------------------------
+        if self.lblTileSelected is None: res = 'ERROR No Tile was selected'
+        else:
+            #------------------------------------------------------------------
+            # Kontrola vybraneho tribe
+            #------------------------------------------------------------------
+            tile     = self.lblTiles[self.lblTileSelected]
+            tileId   = tile.tileId
+            tribeId  = self.str_tribe.get()
+        
+            if tribeId is None or tribeId=='' : res = 'ERROR No Tribe was selected'
+            else:
+                #--------------------------------------------------------------
+                # Ak tribe este nie je na Tile, vyrobim kopiu podla predlohy v self.tribes
+                #--------------------------------------------------------------
+                if tribeId in tile.history[period]['tribes'].keys(): tribeObj = tile.history[period]['tribes'][tribeId]
+                else                                               : tribeObj = dict(self.tribes[tribeId])
+        
+                #--------------------------------------------------------------
+                # Kontrola hustoty populacie
+                #--------------------------------------------------------------
+                if 'density' in tribeObj.keys(): dens = tribeObj['density']
+
+        #----------------------------------------------------------------------
+        self.journal.M(f'getSelectedTribe: {res}, tileId={tileId}, period={period}, tribeId={tribeId}, dens={dens}')
+        return {'res':res, 'tile':tile, 'period':period, 'tribeId':tribeId, 'tribeObj':tribeObj, 'dens':dens}
         
     #==========================================================================
     # Utility

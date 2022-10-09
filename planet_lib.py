@@ -45,18 +45,18 @@ heights = {
 
 #------------------------------------------------------------------------------
 tribes = { 
-       'Green Nation': {'color'     : {'red':0,   'green':1,   'blue':0   }, 
-                        'preference': {'agr':0.7, 'ind'  :0.2, 'war' :0.1 },
-                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       },
-       'Blue Nation' : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
-                        'preference': {'agr':0.2, 'ind'  :0.6, 'war' :0.2 },
-                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       },
-       'Red Nation'  : {'color'     : {'red':1,   'green':0,   'blue':0   }, 
-                        'preference': {'agr':0.2, 'ind'  :0.3, 'war' :0.5 },
-                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       }
+       'Green Men'  : {'color'     : {'red':0,   'green':1,   'blue':0   }, 
+                       'preference': {'agr':0.7, 'ind'  :0.2, 'war' :0.1 },
+                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                      },
+       'Blue Indy'  : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
+                       'preference': {'agr':0.2, 'ind'  :0.6, 'war' :0.2 },
+                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                      },
+       'Red Wariors': {'color'     : {'red':1,   'green':0,   'blue':0   }, 
+                       'preference': {'agr':0.2, 'ind'  :0.3, 'war' :0.5 },
+                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                      }
 }
 #==============================================================================
 # Functions
@@ -72,7 +72,21 @@ def getHeightColor(height):
 #------------------------------------------------------------------------------
 def getPopulColor(tribes):
     
-    return 'red'
+    # Ziskam mix color z populacii vsetkych Tribes
+    mix = [0, 0, 0]
+    
+    for tribe in tribes.values():
+        
+        tribePopul = tribe['density']
+    
+        mix[0] += (tribe['color']['red'  ] * tribePopul)
+        mix[1] += (tribe['color']['green'] * tribePopul)
+        mix[2] += (tribe['color']['blue' ] * tribePopul)
+        
+    # Normalizujem mix na sumu=1
+    mix = normMax(mix)
+    
+    return rgbToHex(mix[0], mix[1], mix[2])
 
 #------------------------------------------------------------------------------
 def getKnowlColor(tribes):
@@ -85,7 +99,39 @@ def getPrefsColor(tribes):
     return 'green'
     
 #------------------------------------------------------------------------------
+def normMax(mix, norma=255):
     
+    # Ziskam maximalnu hodnotu mixu
+    maxVal = -999999999
+    for val in mix: 
+        if val>maxVal: maxVal = val
+    
+    if maxVal==0: return mix
+
+    # Nomralizujem na normu
+    for i in range(len(mix)): mix[i] = mix[i] / maxVal * norma
+    
+    return mix
+    
+#------------------------------------------------------------------------------
+def normSum(mix, norma=1):
+    
+    # Ziskam celkovu sumu mixu
+    suma = 0
+    for val in mix: suma += val
+    
+    if suma==0: return mix
+    
+    # Normalizacia na normu
+    for i in range(len(mix)): mix[i] /= suma
+    
+    return mix
+
+#------------------------------------------------------------------------------
+def rgbToHex(r, g, b):
+    
+    return '#{:02X}{:02X}{:02X}'.format( round(r),round(g), round(b) )
+   
 #==============================================================================
 #                              END OF FILE
 #------------------------------------------------------------------------------
