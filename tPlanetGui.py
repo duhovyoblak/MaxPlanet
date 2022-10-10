@@ -13,7 +13,10 @@ from   tkinter.messagebox import askyesno
 #------------------------------------------------------------------------------
 _WIN            = '1680x1050'
 _DPI            = 100
-_WIDTH_MAX      = 60
+
+_WIDTH_MAX      = 250
+_PADX           = 7
+_PADY           = 9
 
 #==============================================================================
 # class TPlanetGui
@@ -50,14 +53,14 @@ class TPlanetGui(tk.Tk):
         self.tab_selected = 0                # Vybrany tab EDIT/TRIBE/SIMUL
         self.state        = 'STOP'           # Stav simulacie RUNNIG/STOP
         self.period       = 0                # Perioda s ktorou prave pracujem
-        self.periodSim    = 0                # Pomocna perioda pre ucely simulacie
         self.denMax       = 10               # Maximalna suhrnna density na vsetkych tiles pre danu periodu
         
         self.lblTileSelected = None          # lblTile s ktorou pracujem
         self.str_show   = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
         self.str_tribe  = tk.StringVar()     # Tribe s ktorym pracujem na Tile
         self.str_dens   = tk.StringVar()     # Hustota polpulacie ktoru chcem nastavit na Tile
-        self.str_per    = tk.StringVar()     # Aktualna perioda v simulacii
+        self.str_period = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_period.trace('w', self.periodChanged)
 
         #----------------------------------------------------------------------
         # Initialisation
@@ -96,16 +99,14 @@ class TPlanetGui(tk.Tk):
         # Frames for Status bar, Tools, Common a Map
         #----------------------------------------------------------------------
         self.statusBarShow()
-        
-        #----------------------------------------------------------------------
-        # Lavy panel pre mapu
-        #----------------------------------------------------------------------
         self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
         self.frame_map.pack(side='left', fill='both')
-
         self.CommonsShow()
         self.toolsShow()
 
+        #----------------------------------------------------------------------
+        # Vytvorenie mapy
+        #----------------------------------------------------------------------
         self.mapCreate()
             
         self.journal.O( f'TPlanetGui{self.title}.show: End' )
@@ -115,49 +116,99 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def CommonsShow(self):
        
-        frame_comms = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
-        frame_comms.pack(side='top', anchor='n', fill='x')
+        frm = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
+        frm.pack(side='top', anchor='n', fill='x')
        
-        frame_comms.columnconfigure(0, weight=5)
-        frame_comms.columnconfigure(1, weight=1)
-        frame_comms.columnconfigure(2, weight=1)
+        frm.columnconfigure(0, weight=1)
+        frm.columnconfigure(1, weight=1)
        
-        lbl_comm = ttk.Label(frame_comms, relief=tk.RAISED, text='Common variables')
-        lbl_comm.grid(row = 0, column = 0, sticky = 'we' )
-
-    #==========================================================================
-    # Status bar
-    #--------------------------------------------------------------------------
-    def statusBarShow(self):
-       
-        frame_status_bar = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
-        frame_status_bar.pack(side='bottom', anchor='s', fill='x')
-       
-        frame_status_bar.columnconfigure(0, weight=5)
-        frame_status_bar.columnconfigure(1, weight=1)
-        frame_status_bar.columnconfigure(2, weight=1)
-       
-        self.str_status_bar = tk.StringVar(value = 'str_status_bar')
-       
-        status_bar_txt = ttk.Label(frame_status_bar, relief=tk.RAISED, textvariable=self.str_status_bar)
-        status_bar_txt.grid(row = 0, column = 0, sticky = 'we' )
-       
-        status_bar_ver = ttk.Label(frame_status_bar, relief=tk.RAISED, text=f'(c) SIQO v. {self.version}')
-        status_bar_ver.grid(row = 0, column = 2, padx = 3 ,sticky = 'we')
+        frm.rowconfigure   ( 0, weight=1)
+        frm.rowconfigure   ( 1, weight=1)
+        frm.rowconfigure   ( 2, weight=1)
+        frm.rowconfigure   ( 3, weight=1)
 
         #----------------------------------------------------------------------
-        # URL Menu
+        # Period, Show, Load & Save Buttons
         #----------------------------------------------------------------------
-#        self.rcm_url = tk.Menu(self, tearoff = 0)
+        lbl_period = ttk.Label(frm, relief=tk.FLAT, text='I will edit Period:' )
+        lbl_period.grid(row=0, column=0, sticky='ws', padx=_PADX, pady=_PADY)
 
-#        self.rcm_url.add_command(label=_URLS[0], command=lambda: self.changeUrl(_URLS[0]) )
-#        self.rcm_url.add_command(label=_URLS[1], command=lambda: self.changeUrl(_URLS[1]) )
-      
+        self.str_period.set(self.period)
+        spin_period = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_period, width=3)
+        spin_period.grid(row=0, column=1, sticky='w', padx=_PADX, pady=_PADY)
+
+        #----------------------------------------------------------------------
+        lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
+        lbl_show.grid(row=1, column=0, sticky='ws', padx=_PADX, pady=_PADY)
+
+        self.str_show.set('HEIGHT')
+        cb_show = ttk.Combobox(frm, textvariable=self.str_show)
+        cb_show['values'] = ['HEIGHT','POPULATION','KNOWLEDGE','PREFERENCES']
+        cb_show['state'] = 'readonly'
+        cb_show.bind('<<ComboboxSelected>>', self.showChanged)
+        cb_show.grid(row=1, column=1, sticky='nw', padx=_PADX, pady=_PADY)
+
+        #----------------------------------------------------------------------
+        btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
+        btn_load.grid(row=0, column=3, sticky='nwe', padx=_PADX, pady=_PADY)
+        
+        btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
+        btn_save.grid(row=1, column=3, sticky='nwe', padx=_PADX, pady=_PADY)
+        
     #--------------------------------------------------------------------------
-    def setStatus(self, mess):
-       
-        self.str_status_bar.set(mess)
+    def periodChanged(self, widget, blank, mode):
+        
+        self.period = int(self.str_period.get())
+        self.setStatus(f'Selected period is {self.period}')
+        self.mapShow()
+        
+    #--------------------------------------------------------------------------
+    def showChanged(self, event):
+        
+        self.setStatus(f'Selected show is {self.str_show.get()}')
+        self.mapShow()
+        
+    #--------------------------------------------------------------------------
+    def load(self):
+        
+        #----------------------------------------------------------------------
+        # Zistim, kam mam zapisat
+        #----------------------------------------------------------------------
+        fileName = filedialog.askopenfilename(
+            title      = 'Metadata file',
+            initialdir = self.planet.fName,
+            filetypes  = (('json files', '*.json'), ('All files', '*.*'))
+            )
  
+        if fileName == '': return
+        
+        #----------------------------------------------------------------------
+        # Nacitanie metadat
+        #----------------------------------------------------------------------
+        self.setStatus(f'Loading planet from {fileName}')
+        self.planet.fName = fileName
+        self.planet.load()
+        self.denMax = self.planet.getMaxDensity(self.period)
+
+        self.mapCreate()
+         
+    #--------------------------------------------------------------------------
+    def save(self):
+        
+        #----------------------------------------------------------------------
+        # Zistim, kam mam zapisat
+        #----------------------------------------------------------------------
+        fileName = filedialog.asksaveasfile( mode='w', defaultextension=".json", initialfile = self.planet.fName)
+
+        if fileName is None: return
+        
+        #----------------------------------------------------------------------
+        # Nacitanie metadat
+        #----------------------------------------------------------------------
+        self.setStatus(f'Saving planet into {fileName.name}')
+        self.planet.fName = fileName.name
+        self.planet.save()
+         
     #==========================================================================
     # Pravy panel pre nastroje
     #--------------------------------------------------------------------------
@@ -202,10 +253,6 @@ class TPlanetGui(tk.Tk):
         frm.columnconfigure( 3, weight=1)
         frm.columnconfigure( 4, weight=1)
         frm.columnconfigure( 5, weight=1)
-        frm.columnconfigure( 6, weight=1)
-        frm.columnconfigure( 7, weight=1)
-        frm.columnconfigure( 8, weight=1)
-        frm.columnconfigure( 9, weight=1)
        
         frm.rowconfigure   ( 0, weight=1)
         frm.rowconfigure   ( 1, weight=1)
@@ -214,15 +261,6 @@ class TPlanetGui(tk.Tk):
         frm.rowconfigure   ( 4, weight=1)
         frm.rowconfigure   ( 5, weight=1)
         frm.rowconfigure   ( 6, weight=1)
-        frm.rowconfigure   ( 7, weight=1)
-        frm.rowconfigure   ( 8, weight=1)
-        frm.rowconfigure   ( 9, weight=1)
-        frm.rowconfigure   (10, weight=1)
-        frm.rowconfigure   (11, weight=1)
-        frm.rowconfigure   (12, weight=1)
-        frm.rowconfigure   (13, weight=1)
-        frm.rowconfigure   (14, weight=1)
-        frm.rowconfigure   (15, weight=1)
  
         # Vlozim frame do Tabs       
         self.tabs.add(frm, text='Edit Planet')
@@ -230,115 +268,66 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Generate new geography
         #----------------------------------------------------------------------
-
-        lbl_genL = ttk.Label(frm, relief=tk.FLAT, text='.')
-        lbl_genL.grid(row=0, column=0, sticky='w')
-        lbl_genR = ttk.Label(frm, relief=tk.FLAT, text='.')
-        lbl_genR.grid(row=0, column=9, sticky='e')
-
         lbl_gen1 = ttk.Label(frm, relief=tk.FLAT, text='New Planet for')
-        lbl_gen1.grid(row=0, column=1, sticky='e')
+        lbl_gen1.grid(row=0, column=0, sticky='w', padx=_PADX, pady=_PADY)
        
         self.str_rows = tk.StringVar(value=self.planet.rows)
-        spin_rows = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_rows, wrap=True, width=3)
-        spin_rows.grid(row=0, column=2)
+        spin_rows = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_rows, width=3)
+        spin_rows.grid(row=0, column=1, sticky='w', padx=_PADX, pady=_PADY)
        
         lbl_gen2 = ttk.Label(frm, relief=tk.FLAT, text='rows  and' )
-        lbl_gen2.grid(row=0, column=3)
+        lbl_gen2.grid(row=0, column=2, sticky='w', padx=_PADX, pady=_PADY)
 
         self.str_cols = tk.StringVar(value=self.planet.cols)
-        spin_cols = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_cols, wrap=True, width=3)
-        spin_cols.grid(row=0, column=4)
+        spin_cols = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_cols, width=3)
+        spin_cols.grid(row=0, column=3, sticky='w', padx=_PADX, pady=_PADY)
        
         lbl_gen3 = ttk.Label(frm, relief=tk.FLAT, text='columns' )
-        lbl_gen3.grid(row=0, column=5)
+        lbl_gen3.grid(row=0, column=4, padx=_PADX, pady=_PADY)
 
         btn_gen = ttk.Button(frm, text='Generate now', command=self.generate)
-        btn_gen.grid(row=0, column=8, sticky='we')
+        btn_gen.grid(row=0, column=5, sticky='we', padx=_PADX, pady=_PADY)
         
         separator1 = ttk.Separator(frm, orient='horizontal')
-        separator1.grid(row=1, column=1, columnspan=8, sticky='we')       
-        
-        #----------------------------------------------------------------------
-        # Period, Show, Load & Save Buttons
-        #----------------------------------------------------------------------
-        lbl_period = ttk.Label(frm, relief=tk.FLAT, text='I will edit Period:' )
-        lbl_period.grid(row=2, column=1, sticky='ws')
-
-        self.sld_period = ttk.Scale(frm, from_=0, to=self.planet.getMaxPeriod(), orient='horizontal', command=self.periodChanged )
-                        #            variable=self.dbl_period)
-        self.sld_period.grid(row=3, column=1, sticky='nwe')
-
-        lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
-        lbl_show.grid(row=2, column=3, sticky='ws')
-
-        self.str_show.set('HEIGHT')
-        cb_show = ttk.Combobox(frm, textvariable=self.str_show)
-        cb_show['values'] = ['HEIGHT','POPULATION','KNOWLEDGE','PREFERENCES']
-        cb_show['state'] = 'readonly'
-        cb_show.bind('<<ComboboxSelected>>', self.showChanged)
-        cb_show.grid(row=3, column=3, sticky='nwe')
-
-        btn_load = ttk.Button(frm, text='Load Planet', command=self.load)
-        btn_load.grid(row=3, column=5, sticky='nwe')
-        
-        btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
-        btn_save.grid(row=3, column=8, sticky='nwe')
-        
-        separator2 = ttk.Separator(frm, orient='horizontal')
-        separator2.grid(row=4, column=1, columnspan=8, sticky='we')       
+        separator1.grid(row=1, column=0, columnspan=6, sticky='we', padx=_PADX, pady=_PADY)       
         
         #----------------------------------------------------------------------
         # Edit Tribes on the Tile
         #----------------------------------------------------------------------
         self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='Tile' )
-        self.lbl_tile.grid(row=5, column=1, columnspan=6, sticky='w')
+        self.lbl_tile.grid(row=2, column=0, columnspan=6, sticky='w', padx=_PADX, pady=_PADY)
         
         #----------------------------------------------------------------------
-        # Tribes existing on the Tile
-        
         lbl_trb = ttk.Label(frm, relief=tk.FLAT, text='Available Tribes:' )
-        lbl_trb.grid(row=6, column=1, sticky='ws')
+        lbl_trb.grid(row=3, column=0, sticky='ws', padx=_PADX, pady=_PADY)
 
         # self.str_show.set('HEIGHT')
         self.cb_trb = ttk.Combobox(frm, textvariable=self.str_tribe)
         self.cb_trb['values'] = list(self.tribes.keys())
         self.cb_trb['state']  = 'readonly'
         self.cb_trb.bind('<<ComboboxSelected>>', self.tribeChanged)
-        self.cb_trb.grid(row=7, column=1, sticky='wn')
-
-        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="Population's density" )
-        lbl_dens.grid(row=6, column=3, sticky='ws')
-
-        spin_dens = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_dens, wrap=True, width=3)
-        spin_dens.grid(row=7, column=3, sticky='nwe')
-
-        btn_trbSet = ttk.Button(frm, text='Set tribe in the Tile', command=self.setTribe)
-        btn_trbSet.grid(row=7, column=8, sticky='nwe')
+        self.cb_trb.grid(row=4, column=0, sticky='wn', padx=_PADX, pady=_PADY)
 
         #----------------------------------------------------------------------
-        # Tribes I want add to the Tile
+        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="Population's density" )
+        lbl_dens.grid(row=3, column=1, sticky='ws', padx=_PADX, pady=_PADY)
+
+        spin_dens = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_dens, width=3)
+        spin_dens.grid(row=4, column=1, sticky='nwe', padx=_PADX, pady=_PADY)
+
+        #----------------------------------------------------------------------
+        btn_trbSet = ttk.Button(frm, text='Set tribe in the Tile', command=self.setTribe)
+        btn_trbSet.grid(row=4, column=5, sticky='nwe', padx=_PADX, pady=_PADY)
         
-        
+        separator2 = ttk.Separator(frm, orient='horizontal')
+        separator2.grid(row=5, column=0, columnspan=6, sticky='we', padx=_PADX, pady=_PADY)       
+
     #--------------------------------------------------------------------------
     def generate(self):
 
         self.planet.generate( int(self.str_rows.get()), int(self.str_cols.get()) )
         self.denMax = self.planet.getMaxDensity(self.period)
         self.mapCreate()
-        
-    #--------------------------------------------------------------------------
-    def periodChanged(self, event):
-        
-        self.period = round(float(self.sld_period.get()))
-        self.setStatus(f'Selected period is {self.period}')
-        self.mapShow()
-        
-    #--------------------------------------------------------------------------
-    def showChanged(self, event):
-        
-        self.setStatus(f'Selected show is {self.str_show.get()}')
-        self.mapShow()
         
     #--------------------------------------------------------------------------
     def tribeChanged(self, event):
@@ -373,47 +362,6 @@ class TPlanetGui(tk.Tk):
         else: self.setStatus(rec['res'])
         
     #--------------------------------------------------------------------------
-    def load(self):
-        
-        #----------------------------------------------------------------------
-        # Zistim, kam mam zapisat
-        #----------------------------------------------------------------------
-        fileName = filedialog.askopenfilename(
-            title      = 'Metadata file',
-            initialdir = self.planet.fName,
-            filetypes  = (('json files', '*.json'), ('All files', '*.*'))
-            )
- 
-        if fileName == '': return
-        
-        #----------------------------------------------------------------------
-        # Nacitanie metadat
-        #----------------------------------------------------------------------
-        self.setStatus(f'Loading planet from {fileName}')
-        self.planet.fName = fileName
-        self.planet.load()
-        self.denMax = self.planet.getMaxDensity(self.period)
-
-        self.mapCreate()
-         
-    #--------------------------------------------------------------------------
-    def save(self):
-        
-        #----------------------------------------------------------------------
-        # Zistim, kam mam zapisat
-        #----------------------------------------------------------------------
-        fileName = filedialog.asksaveasfile( mode='w', defaultextension=".json", initialfile = self.planet.fName)
-
-        if fileName is None: return
-        
-        #----------------------------------------------------------------------
-        # Nacitanie metadat
-        #----------------------------------------------------------------------
-        self.setStatus(f'Saving planet into {fileName.name}')
-        self.planet.fName = fileName.name
-        self.planet.save()
-         
-    #--------------------------------------------------------------------------
     def tabSimulShow(self):
        
         #----------------------------------------------------------------------
@@ -424,18 +372,10 @@ class TPlanetGui(tk.Tk):
         frm.columnconfigure( 0, weight=1)
         frm.columnconfigure( 1, weight=1)
         frm.columnconfigure( 2, weight=1)
-        frm.columnconfigure( 3, weight=1)
-        frm.columnconfigure( 4, weight=1)
        
         frm.rowconfigure   (0, weight=1)
         frm.rowconfigure   (1, weight=1)
         frm.rowconfigure   (2, weight=1)
-        frm.rowconfigure   (3, weight=1)
-        frm.rowconfigure   (4, weight=1)
-        frm.rowconfigure   (5, weight=1)
-        frm.rowconfigure   (6, weight=1)
-        frm.rowconfigure   (7, weight=1)
-        frm.rowconfigure   (8, weight=1)
  
         # Vlozim frame do Tabs       
         self.tabs.add(frm, text='Simulation')
@@ -443,30 +383,17 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Run, Stop, Reset
         #----------------------------------------------------------------------
-
-        lbl_genL = ttk.Label(frm, relief=tk.FLAT, text='.')
-        lbl_genL.grid(row=0, column=0, sticky='w')
-        lbl_genR = ttk.Label(frm, relief=tk.FLAT, text='.')
-        lbl_genR.grid(row=0, column=9, sticky='e')
-
-        lbl_per = ttk.Label(frm, relief=tk.FLAT, text='Current period:')
-        lbl_per.grid(row=0, column=1, sticky='e')
-       
-        self.str_per.set(self.period)
-        spin_per = ttk.Spinbox(frm, from_=0, to=99999, textvariable=self.str_per, width=7)
-        spin_per.grid(row=0, column=2)
-
         btn_simRest = ttk.Button(frm, text='Reset Simulation to period', command=self.simReset)
-        btn_simRest.grid(row=0, column=8, sticky='we')
-        
-        separator1 = ttk.Separator(frm, orient='horizontal')
-        separator1.grid(row=2, column=1, columnspan=8, sticky='we')       
+        btn_simRest.grid(row=0, column=0, sticky='we', padx=_PADX, pady=_PADY)
         
         btn_simGo = ttk.Button(frm, text='Simulation start', command=self.simGo)
-        btn_simGo.grid(row=3, column=4, sticky='we')
+        btn_simGo.grid(row=0, column=1, sticky='we', padx=_PADX, pady=_PADY)
         
         btn_simStop = ttk.Button(frm, text='Simulation stop', command=self.simStop)
-        btn_simStop.grid(row=3, column=8, sticky='we')
+        btn_simStop.grid(row=0, column=2, sticky='we', padx=_PADX, pady=_PADY)
+        
+        separator1 = ttk.Separator(frm, orient='horizontal')
+        separator1.grid(row=1, column=0, columnspan=3, sticky='we', padx=_PADX, pady=_PADY)       
         
     #--------------------------------------------------------------------------
     def simReset(self):
@@ -682,6 +609,39 @@ class TPlanetGui(tk.Tk):
         pass
         
     #==========================================================================
+    # Status bar
+    #--------------------------------------------------------------------------
+    def statusBarShow(self):
+       
+        frame_status_bar = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
+        frame_status_bar.pack(side='bottom', anchor='s', fill='x')
+       
+        frame_status_bar.columnconfigure(0, weight=5)
+        frame_status_bar.columnconfigure(1, weight=1)
+        frame_status_bar.columnconfigure(2, weight=1)
+       
+        self.str_status_bar = tk.StringVar(value = 'str_status_bar')
+       
+        status_bar_txt = ttk.Label(frame_status_bar, relief=tk.RAISED, textvariable=self.str_status_bar)
+        status_bar_txt.grid(row = 0, column = 0, sticky = 'we' )
+       
+        status_bar_ver = ttk.Label(frame_status_bar, relief=tk.RAISED, text=f'(c) SIQO v. {self.version}')
+        status_bar_ver.grid(row = 0, column = 2, padx = 3 ,sticky = 'we')
+
+        #----------------------------------------------------------------------
+        # URL Menu
+        #----------------------------------------------------------------------
+#        self.rcm_url = tk.Menu(self, tearoff = 0)
+
+#        self.rcm_url.add_command(label=_URLS[0], command=lambda: self.changeUrl(_URLS[0]) )
+#        self.rcm_url.add_command(label=_URLS[1], command=lambda: self.changeUrl(_URLS[1]) )
+      
+    #--------------------------------------------------------------------------
+    def setStatus(self, mess):
+       
+        self.str_status_bar.set(mess)
+ 
+    #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------
     def tileColor(self, tile, period=-1):
@@ -704,7 +664,7 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def tileText(self, row, col):
         
-        return '       '
+        return '     '
 #        return f'{str(row).rjust(2)}x{str(col).rjust(2)}'
         
     #--------------------------------------------------------------------------
