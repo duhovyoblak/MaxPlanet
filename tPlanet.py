@@ -1,6 +1,7 @@
 #==============================================================================
 # Siqo class TPlanet
 #------------------------------------------------------------------------------
+import time
 import siqo_general  as     gen
 from   tTile         import TTile
 
@@ -33,16 +34,14 @@ class TPlanet:
         self.journal    = journal     # Odkaz na globalny journal
         TTile.journal   = journal
         
-        
+        # Prepojim evidenciu Tiles
+        self.tiles      = TTile.tiles # Geografia planety  {tileId: tileObj}
+
         # Nastavenie vlastnosti planety
         self.name       = name               # Nazov planety
         self.fName      = 'TestPlanet.json'  # Nazov suboru pre perzistenciu planetu
         self.rows       = 0                  # Pocet riadkov rastra planety
         self.cols       = 0                  # Pocet stlpcov rastra planety
-        self.period     = 0                  # Maximalna perioda dosiahnuta v simulacii
-
-        # Prepojim evidenciu Tiles
-        self.tiles      = TTile.tiles # Geografia planety  {tileId: tileObj}
 
         self.journal.O(f'{self.name}.constructor: done')
         
@@ -67,7 +66,7 @@ class TPlanet:
         msg.append(f'rows        :{self.rows}'       )
         msg.append(f'cols        :{self.cols}'       )
         msg.append(f'tiles       :{len(self.tiles)}' )
-        msg.append(f'period      :{self.period}'     )
+        msg.append(f'Max period  :{self.getMaxPeriod()}')
 
         return {'res':'OK', 'msg':msg}
 
@@ -79,7 +78,6 @@ class TPlanet:
     
         self.journal.I(f'{self.name}.clear:')
         
-        self.period = 0
         self.rows   = 0
         self.cols   = 0
         
@@ -92,10 +90,7 @@ class TPlanet:
         "Resets state of Planet into begining state"
     
         self.journal.I(f'{self.name}.reset:')
-        
-        self.period = 0
         for tile in self.tiles.values(): tile.reset()
-        
         self.journal.O(f'{self.name}.reset: done')
         
     #--------------------------------------------------------------------------
@@ -131,6 +126,24 @@ class TPlanet:
         
         self.journal.O(f'{self.name}.generate: done')
     
+    #--------------------------------------------------------------------------
+    def simReset(self, period):
+
+        self.journal.I(f'{self.name}.simReset: period = {period}')
+        
+        
+        self.journal.O(f'{self.name}.simReset: done')
+
+    #--------------------------------------------------------------------------
+    def simNextPeriod(self, period):
+
+        self.journal.I(f'{self.name}.simNextPeriod: Period is {period}')
+        
+        time.sleep(1)
+        
+        
+        self.journal.O(f'{self.name}.simStart: done')
+
     #--------------------------------------------------------------------------
     def getMaxPeriod(self):
         "Returns max available period in history"
@@ -208,11 +221,8 @@ class TPlanet:
         #----------------------------------------------------------------------
         data = {}
         
-        data['rows'  ]  = self.rows
-        data['cols'  ]  = self.cols
-        data['period']  = self.period
-        
-        data['tiles']   = {}
+        data['rows'  ] = self.rows
+        data['cols'  ] = self.cols
         
         for tileId, tileObj in self.tiles.items():
             data[tileId] = tileObj.toJson()
@@ -243,13 +253,10 @@ class TPlanet:
         #----------------------------------------------------------------------
         # Updatnem parametre tiles podla data
         #----------------------------------------------------------------------
-        self.period = data['period']
-        
         for tileId, tileObj in self.tiles.items():
             tileObj.fromJson( data[tileId] )
         
         self.journal.O(f'{self.name}.load: done')
-        
         
 #------------------------------------------------------------------------------
 print('TPlanet ver 0.01')

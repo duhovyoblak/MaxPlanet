@@ -48,7 +48,9 @@ class TPlanetGui(tk.Tk):
         self.tribes    = lib.tribes          # Zoznam vsetky tribes
         
         self.tab_selected = 0                # Vybrany tab EDIT/TRIBE/SIMUL
+        self.state        = 'STOP'           # Stav simulacie RUNNIG/STOP
         self.period       = 0                # Perioda s ktorou prave pracujem
+        self.periodSim    = 0                # Pomocna perioda pre ucely simulacie
         self.denMax       = 10               # Maximalna suhrnna density na vsetkych tiles pre danu periodu
         
         self.lblTileSelected = None          # lblTile s ktorou pracujem
@@ -75,7 +77,6 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Nastavenia root window
         #----------------------------------------------------------------------
-
         self.geometry('1435x740')
         self.minsize(1050,400)
         self.title(self.planet.name)
@@ -92,14 +93,9 @@ class TPlanetGui(tk.Tk):
         self.style.map('Treeview', background=[('selected','green')] )
 
         #----------------------------------------------------------------------
-        # Panel pre Status bar
+        # Frames for Status bar, Tools, Common a Map
         #----------------------------------------------------------------------
         self.statusBarShow()
-
-        #----------------------------------------------------------------------
-        # Pravy panel pre nastroje
-        #----------------------------------------------------------------------
-        self.toolsShow()
         
         #----------------------------------------------------------------------
         # Lavy panel pre mapu
@@ -107,9 +103,27 @@ class TPlanetGui(tk.Tk):
         self.frame_map = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
         self.frame_map.pack(side='left', fill='both')
 
+        self.CommonsShow()
+        self.toolsShow()
+
         self.mapCreate()
             
         self.journal.O( f'TPlanetGui{self.title}.show: End' )
+
+    #==========================================================================
+    # Common gauges
+    #--------------------------------------------------------------------------
+    def CommonsShow(self):
+       
+        frame_comms = ttk.Frame(self, relief=tk.RAISED, borderwidth=1)
+        frame_comms.pack(side='top', anchor='n', fill='x')
+       
+        frame_comms.columnconfigure(0, weight=5)
+        frame_comms.columnconfigure(1, weight=1)
+        frame_comms.columnconfigure(2, weight=1)
+       
+        lbl_comm = ttk.Label(frame_comms, relief=tk.RAISED, text='Common variables')
+        lbl_comm.grid(row = 0, column = 0, sticky = 'we' )
 
     #==========================================================================
     # Status bar
@@ -448,10 +462,41 @@ class TPlanetGui(tk.Tk):
         separator1 = ttk.Separator(frm, orient='horizontal')
         separator1.grid(row=2, column=1, columnspan=8, sticky='we')       
         
+        btn_simGo = ttk.Button(frm, text='Simulation start', command=self.simGo)
+        btn_simGo.grid(row=3, column=4, sticky='we')
+        
+        btn_simStop = ttk.Button(frm, text='Simulation stop', command=self.simStop)
+        btn_simStop.grid(row=3, column=8, sticky='we')
+        
     #--------------------------------------------------------------------------
-    def simReset():
+    def simReset(self):
         
         pass
+    
+    #--------------------------------------------------------------------------
+    def simGo(self):
+        
+        self.state     = 'RUNNING'
+        self.periodSim = self.period
+        
+        while self.state == 'RUNNING':
+            
+            self.periodSim += 1
+            
+            self.planet.simNextPeriod(self.periodSim)
+            self.setStatus(f'Simulation ends period {self.period}')
+            
+            
+    #--------------------------------------------------------------------------
+    def simStop(self):
+        
+        self.state = 'STOP'
+        
+        self.sld_period.set(self.periodSim)
+        self.str_per.set(self.periodSim)
+        self.period = self.periodSim
+        self.mapShow()
+        self.setStatus(f'Simulation stopped at period {self.period}')
     
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
