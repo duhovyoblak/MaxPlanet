@@ -135,14 +135,25 @@ class TPlanet:
         self.journal.O(f'{self.name}.simReset: done')
 
     #--------------------------------------------------------------------------
-    def simNextPeriod(self, period):
+    def simPeriod(self, period):
 
-        self.journal.I(f'{self.name}.simNextPeriod: Period is {period}')
         
-        time.sleep(1)
+        #----------------------------------------------------------------------
+        # Skontrolujem vstupne pomienky
+        #----------------------------------------------------------------------
+        if period < 1                    : return 'Period is lower than 0, command is denied'
+        if period > self.getMaxPeriod()+1: return 'Period is too high, command is denied'
         
+        #----------------------------------------------------------------------
+        self.journal.I(f'{self.name}.simPeriod: Period is {period}')
+
+        #----------------------------------------------------------------------
+        # Vykonam simulaciu postupne vo vsetkych tiles
+        #----------------------------------------------------------------------
+        for tileObj in self.tiles.values():
+            tileObj.simPeriod(period)
         
-        self.journal.O(f'{self.name}.simStart: done')
+        self.journal.O(f'{self.name}.simPeriod: done')
 
     #--------------------------------------------------------------------------
     def getMaxPeriod(self):
@@ -150,7 +161,8 @@ class TPlanet:
         
         key   = list(self.tiles.keys())[0]
         toRet = len(self.tiles[key].history) - 1
-        self.journal.O(f'{self.name}.getMaxPeriod: is {toRet}')
+        
+        self.journal.M(f'{self.name}.getMaxPeriod: is {toRet}')
         
         return toRet
         

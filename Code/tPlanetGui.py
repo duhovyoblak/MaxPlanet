@@ -134,7 +134,7 @@ class TPlanetGui(tk.Tk):
         lbl_period.grid(row=0, column=0, sticky='ws', padx=_PADX, pady=_PADY)
 
         self.str_period.set(self.period)
-        spin_period = ttk.Spinbox(frm, from_=5, to=90, textvariable=self.str_period, width=3)
+        spin_period = ttk.Spinbox(frm, from_=0, to=99999, textvariable=self.str_period, width=3)
         spin_period.grid(row=0, column=1, sticky='w', padx=_PADX, pady=_PADY)
 
         #----------------------------------------------------------------------
@@ -159,8 +159,15 @@ class TPlanetGui(tk.Tk):
     def periodChanged(self, widget, blank, mode):
         
         self.period = int(self.str_period.get())
-        self.setStatus(f'Selected period is {self.period}')
-        self.mapShow()
+        
+        if self.period > self.planet.getMaxPeriod():
+            
+            self.period = self.planet.getMaxPeriod()
+            self.str_period.set(self.period)
+        
+        else:
+            self.setStatus(f'Selected period is {self.period}')
+            self.mapShow()
         
     #--------------------------------------------------------------------------
     def showChanged(self, event):
@@ -386,11 +393,8 @@ class TPlanetGui(tk.Tk):
         btn_simRest = ttk.Button(frm, text='Reset Simulation to period', command=self.simReset)
         btn_simRest.grid(row=0, column=0, sticky='we', padx=_PADX, pady=_PADY)
         
-        btn_simGo = ttk.Button(frm, text='Simulation start', command=self.simGo)
-        btn_simGo.grid(row=0, column=1, sticky='we', padx=_PADX, pady=_PADY)
-        
-        btn_simStop = ttk.Button(frm, text='Simulation stop', command=self.simStop)
-        btn_simStop.grid(row=0, column=2, sticky='we', padx=_PADX, pady=_PADY)
+        self.btn_simSS = ttk.Button(frm, text='Simulation start', command=self.simStart)
+        self.btn_simSS.grid(row=0, column=1, sticky='we', padx=_PADX, pady=_PADY)
         
         separator1 = ttk.Separator(frm, orient='horizontal')
         separator1.grid(row=1, column=0, columnspan=3, sticky='we', padx=_PADX, pady=_PADY)       
@@ -401,31 +405,33 @@ class TPlanetGui(tk.Tk):
         pass
     
     #--------------------------------------------------------------------------
-    def simGo(self):
+    def simStart(self):
         
-        self.state     = 'RUNNING'
-        self.periodSim = self.period
+        self.state = 'RUNNING'
+        self.btn_simSS.configure(text='Simulation stop', command=self.simStop)
         
-        while self.state == 'RUNNING':
-            
-            self.periodSim += 1
-            
-            self.planet.simNextPeriod(self.periodSim)
-            self.setStatus(f'Simulation ends period {self.period}')
-            
+        # Naplanujem prvy krok simulacie
+        self.after(1, self.simPeriod)
             
     #--------------------------------------------------------------------------
     def simStop(self):
         
         self.state = 'STOP'
-        
-        self.sld_period.set(self.periodSim)
-        self.str_per.set(self.periodSim)
-        self.period = self.periodSim
-        self.mapShow()
-        self.setStatus(f'Simulation stopped at period {self.period}')
+        self.btn_simSS.configure(text='Simulation start', command=self.simStart)
     
     #--------------------------------------------------------------------------
+    def simPeriod(self):
+        
+        self.journal.M(f'simPeriod: period is {self.period}')
+
+        self.period += 1
+        self.planet.simPeriod(self.period)
+        self.str_period.set(self.period)
+
+        # Ak bezi simulacia, naplanujem dalsi krok
+        if self.state == 'RUNNING':
+            self.after(1, self.simPeriod)
+        
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
