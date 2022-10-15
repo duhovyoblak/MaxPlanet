@@ -12,7 +12,10 @@ _SEP   = 50*''
 # package's variables
 #------------------------------------------------------------------------------
 _C_DENS_GROWTH   = 0.5  # Koeficient prirastku populacie pri nadbytku resources
+_C_EMIGR_STRESS  = 0.2  # Koeficient emigracie kvoli stresu
+
 _STRES_MIN       = 0.1  # Zakladna miera stresu populacie
+_STRES_MAX       = 0.8  # Maximalna miera stresu populacie
 
 #==============================================================================
 # TTile
@@ -148,7 +151,7 @@ class TTile:
         #----------------------------------------------------------------------
         # Updatnem densTot
         densTot = 0
-        for tribeObj in tribes.values(): densTot += tribeObj['density']
+        for trb in self.tribes.values(): densTot += trb['density']
         actPeriod['densTot'] = densTot
         
         #----------------------------------------------------------------------
@@ -262,58 +265,78 @@ class TTile:
         for tribeId, tribeObj in lastPeriod['tribes'].items():
 
             # Vstupne hodnoty
-            res   = resrs[tribeId]['agr'] + resrs[tribeId]['ind'] + resrs[tribeId]['war']
-            dens  = tribeObj['density']
+            resrTot = resrs[tribeId]['agr'] + resrs[tribeId]['ind'] + resrs[tribeId]['war']
+            densTot = tribeObj['density']
+            strsTot = _STRES_MIN
+            deatTot = 0
+            emigTot = 0
 
             #------------------------------------------------------------------
             # Ubytok populacie nasledkom nedostatku zdrojov 1 res per 1 clovek/km2
             #------------------------------------------------------------------
-            if dens > res: 
+            if densTot > resrTot: 
                 
                 # Velkost populacie ktorej chybaju zdroje a zomrie
-                death = dens-res
+                deatTot = densTot - resrTot
                 
                 # Miera stresu je pomer zomretej populacie voci povodnej populacii
-                stres = death/dens
+                strsTot += deatTot / densTot
+                if strsTot > _STRES_MAX: strsTot = _STRES_MAX
                 
                 # Zostane zit len tolko ludi kolko ma zdroje
-                dens = res
+                densTot = resrTot
                 
             #------------------------------------------------------------------
             # Prirastok populacie nasledkom nadbytkku zdrojov
             #------------------------------------------------------------------
-            else: 
-                
-                dens  = dens + _C_DENS_GROWTH * (res-dens)   # Blahobyt
-                stres = _STRES_MIN  # Zakladna miera stresu
+            else: densTot  = densTot + _C_DENS_GROWTH * (resrTot-densTot)
             
             #------------------------------------------------------------------
             # Emigracia do susednych Tiles
             #------------------------------------------------------------------
-            
-            # Urcim, aka cast populacie sa rozhodla odist podla miery stresu
-            
             for neigh in self.neighs:
                 
                 #Hustota Tribeu u susedov
-                neighDens = neigh.history[lastPeriod['period']]['tribes'][tribeId]['density']
+                densNeigh = neigh.history[lastPeriod['period']]['tribes'][tribeId]['density']
                 
                 # Ak je u nas vacsia densita naseho Tribe ako u susedov
-                if dens > neighDens:
+                if densTot > densNeigh: 
                     
+                    # Emigracia do susedneho tribe
+                    emig     = _C_EMIGR_STRESS * strsTot * (densTot-densNeigh)
+                    emigTot += emig
+                    
+                    # Pridam emigrovanych do susednej Tile
+ #                   neigh.addDens(period, emig)
                     #
 
 
             #------------------------------------------------------------------
             # Zapis vysledku pre tribe
             #------------------------------------------------------------------
-            denses[tribeId] = dens
+            denses[tribeId] = {'dens':densTot, 'stres':strsTot, 'emigr':emigTot}
         
         self.journal.O()
         return denses
 
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
+    #==========================================================================
+    # Tile tools
+    #--------------------------------------------------------------------------
+    def getPeriod(self, period):
+        "Returns period if exists, creates empty id does not exists"
+        
+        # Ak je to prave nasledujuca perioda v historii, vytvorim ju
+        if period == len(self.history): self.history.append({ 'period':period, 'tribes':{} })
+        
+        # Ak perioda existuje, vratim ju, inak vratim None
+        if period  < len(self.history): toRet = self.history[period]
+        else                          : toRet = None
+
+        return toRet
+        
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
