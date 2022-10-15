@@ -48,14 +48,19 @@ tribes = {
        'Green Men'  : {'color'     : {'red':0,   'green':1,   'blue':0   }, 
                        'preference': {'agr':1.0, 'ind'  :0.0, 'war' :0.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       'density':0
                       },
+       
        'Blue Indy'  : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
                        'preference': {'agr':0.0, 'ind'  :1.0, 'war' :0.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       'density':0
                       },
+       
        'Red Wariors': {'color'     : {'red':1,   'green':0,   'blue':0   }, 
                        'preference': {'agr':0.0, 'ind'  :0.0, 'war' :1.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+                       'density':0
                       }
 }
 
@@ -122,7 +127,8 @@ def rgbToHex(r, g, b):
 def normMax(mix, maxVal, norma=255):
     
     # Nomralizujem na normu
-    for i in range(len(mix)): mix[i] = mix[i] / maxVal * norma
+    if maxVal>0:
+        for i in range(len(mix)): mix[i] = mix[i] / maxVal * norma
     
     return mix
     

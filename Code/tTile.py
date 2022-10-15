@@ -11,11 +11,11 @@ _SEP   = 50*''
 #==============================================================================
 # package's variables
 #------------------------------------------------------------------------------
-_C_DENS_GROWTH   = 0.5  # Koeficient prirastku populacie pri nadbytku resources
-_C_EMIGR_STRESS  = 0.2  # Koeficient emigracie kvoli stresu
+_C_DENS_GROWTH   = 1.2  # Koeficient prirodzeneho prirastku populacie
 
 _STRES_MIN       = 0.1  # Zakladna miera stresu populacie
 _STRES_MAX       = 0.8  # Maximalna miera stresu populacie
+_STRES_EMIG      = 0.2  # Koeficient emigracie kvoli stresu
 
 #==============================================================================
 # TTile
@@ -25,8 +25,8 @@ class TTile:
     #==========================================================================
     # Static variables & methods
     #--------------------------------------------------------------------------
-    journal = None   # Globalny journal
-    tiles   = {}     # Zoznam vsetkych tiles  {tileId: tileObj}
+    journal    = None        # Globalny journal
+    tiles      = {}          # Zoznam vsetkych tiles  {tileId: tileObj}
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -123,9 +123,9 @@ class TTile:
         self.journal.O(f'{self.tileId}.reset: done')
         
     #--------------------------------------------------------------------------
-    def getDenStr(self, period):
+    def getPeriodDenStr(self, period):
         
-        tribes = self.history[period]['tribes']
+        tribes = self.getPeriod(period)['tribes']
         
         toRet = 'Density:'
         for tribeId, tribeObj in tribes.items(): toRet += f" {tribeId}:{tribeObj['density']}"
@@ -134,33 +134,6 @@ class TTile:
         return toRet
     
     #--------------------------------------------------------------------------
-    def setTribe(self, period, tribeId, tribeObj):
-        
-        self.journal.I(f'{self.tileId}.setTribe: period {period} tribe {tribeId} ')
-        
-        print(tribeObj)
-        
-        #----------------------------------------------------------------------
-        # Ziskam data z historie
-        actPeriod = self.history[period]
-        
-        #----------------------------------------------------------------------
-        # Upravim data podla poziadavky
-        actPeriod['tribes'][tribeId] = tribeObj
-        
-        #----------------------------------------------------------------------
-        # Updatnem densTot
-        densTot = 0
-        for trb in self.tribes.values(): densTot += trb['density']
-        actPeriod['densTot'] = densTot
-        
-        #----------------------------------------------------------------------
-        # Zapisem data do historie
-        self.history[period] = actPeriod
-        
-        self.journal.O()
-        
-    #--------------------------------------------------------------------------
     def simPeriod(self, period):
         
         self.journal.I(f'{self.tileId}.simPeriod: period {period}')
@@ -168,7 +141,7 @@ class TTile:
         #----------------------------------------------------------------------
         # Vyberiem z historie predchadzajucu periodu a inicializujem simulovanu periodu
         #----------------------------------------------------------------------
-        lastPeriod = self.history[period-1]
+        lastPeriod = self.getPeriod(period-1)
         simPeriod  = {'period':period}
         
         #----------------------------------------------------------------------
@@ -260,8 +233,12 @@ class TTile:
 
         self.journal.I(f'{self.tileId}.evaluateDensity:')
         
+        period = lastPeriod['period']
         denses = {}
         
+        #----------------------------------------------------------------------
+        # Vyhodnotim zmeny populacie pre vsetky Tribes na Tile
+        #----------------------------------------------------------------------
         for tribeId, tribeObj in lastPeriod['tribes'].items():
 
             # Vstupne hodnoty
@@ -269,7 +246,11 @@ class TTile:
             densTot = tribeObj['density']
             strsTot = _STRES_MIN
             deatTot = 0
-            emigTot = 0
+
+            #------------------------------------------------------------------
+            # Prirodzeny prirastok populacie
+            #------------------------------------------------------------------
+            densTot = _C_DENS_GROWTH * densTot
 
             #------------------------------------------------------------------
             # Ubytok populacie nasledkom nedostatku zdrojov 1 res per 1 clovek/km2
@@ -287,34 +268,33 @@ class TTile:
                 densTot = resrTot
                 
             #------------------------------------------------------------------
-            # Prirastok populacie nasledkom nadbytkku zdrojov
+            # Emigracia do vsetkych susednych Tiles
             #------------------------------------------------------------------
-            else: densTot  = densTot + _C_DENS_GROWTH * (resrTot-densTot)
-            
-            #------------------------------------------------------------------
-            # Emigracia do susednych Tiles
-            #------------------------------------------------------------------
-            for neigh in self.neighs:
+            for neighObj in self.neighs:
                 
                 #Hustota Tribeu u susedov
-                densNeigh = neigh.history[lastPeriod['period']]['tribes'][tribeId]['density']
+                densNeigh = neighObj.getPeriodDens(period, tribeId)
+                emigTot   = 0
                 
                 # Ak je u nas vacsia densita naseho Tribe ako u susedov
                 if densTot > densNeigh: 
                     
                     # Emigracia do susedneho tribe
-                    emig     = _C_EMIGR_STRESS * strsTot * (densTot-densNeigh)
+                    emig     = _STRES_EMIG * strsTot * (densTot-densNeigh)
                     emigTot += emig
                     
                     # Pridam emigrovanych do susednej Tile
- #                   neigh.addDens(period, emig)
-                    #
+                    neighObj.addPeriodDens(period, tribeId, emig)
 
+            #------------------------------------------------------------------
+            # Ubytok populacie nasledkom emigracie
+            #------------------------------------------------------------------
+            densTot -= emigTot
 
             #------------------------------------------------------------------
             # Zapis vysledku pre tribe
             #------------------------------------------------------------------
-            denses[tribeId] = {'dens':densTot, 'stres':strsTot, 'emigr':emigTot}
+            denses[tribeId] = {'density':densTot, 'stres':strsTot, 'emigr':emigTot}
         
         self.journal.O()
         return denses
@@ -338,6 +318,35 @@ class TTile:
         return toRet
         
     #--------------------------------------------------------------------------
+    def getPeriodTribe(self, period, tribeId):
+        "Returns tribe for respective period"
+        
+        actPeriod = self.getPeriod(period)
+        
+        # Ak tribe neexistuje, doplnim ho podla vzoru
+        if tribeId not in actPeriod['tribes'].keys(): actPeriod['tribes'][tribeId] = lib.tribes[tribeId]
+
+        return actPeriod['tribes'][tribeId]
+        
+    #--------------------------------------------------------------------------
+    def getPeriodDens(self, period, tribeId):
+        "Returns density of tribeId for respective period"
+        
+        periodTribe = self.getPeriodTribe(period, tribeId)
+        return periodTribe['density']
+        
+    #--------------------------------------------------------------------------
+    def setPeriodDens(self, period, tribeId, dens):
+        
+        periodTribe = self.getPeriodTribe(period, tribeId)
+        periodTribe['density'] = dens
+        
+    #--------------------------------------------------------------------------
+    def addPeriodDens(self, period, tribeId, dens):
+        
+        periodTribe = self.getPeriodTribe(period, tribeId)
+        periodTribe['density'] += dens
+        
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
     #==========================================================================

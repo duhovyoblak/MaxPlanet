@@ -345,7 +345,7 @@ class TPlanetGui(tk.Tk):
         self.str_dens.set('')
    
         rec = self.getSelectedTribe()
-        if rec['res']=='OK': self.str_dens.set(rec['dens'])
+        if rec['res']=='OK': self.str_dens.set(rec['tribeObj']['density'])
 
     #--------------------------------------------------------------------------
     def setTribe(self):
@@ -356,12 +356,11 @@ class TPlanetGui(tk.Tk):
 
         if rec['res']=='OK':
         
-            tribeObj = rec['tribeObj']
-            tribeObj['density'] = round(float(self.str_dens.get()),2)
-            
             if rec['tile'].height==0: self.setStatus('I can not set tribe into sea')
+            
+            # Nastavim density pre vybrany Tribe
             else: 
-                rec['tile'].setTribe(rec['period'], rec['tribeId'], rec['tribeObj'])
+                rec['tile'].setPeriodDens(self.period, rec['tribeId'], round(float(self.str_dens.get()),2) )
                 self.denMax = self.planet.getMaxDensity(self.period)
                 self.mapShow()
                 self.showTileOptions()
@@ -555,7 +554,7 @@ class TPlanetGui(tk.Tk):
 
         # Nastavenie option podla vybranej Tile
         tile   = self.lblTiles[self.lblTileSelected]
-        dens = tile.getDenStr(self.period)
+        dens = tile.getPeriodDenStr(self.period)
         msg = f'{tile.tileId} with height {tile.height} and {dens}'
 
         self.lbl_tile['text'] = msg
@@ -695,23 +694,11 @@ class TPlanetGui(tk.Tk):
             tribeId  = self.str_tribe.get()
         
             if tribeId is None or tribeId=='' : res = 'ERROR No Tribe was selected'
-            else:
-                #--------------------------------------------------------------
-                # Ak tribe este nie je na Tile, vyrobim kopiu podla predlohy v self.tribes
-                #--------------------------------------------------------------
-                if tribeId in tile.history[self.period]['tribes'].keys(): 
-                    tribeObj = tile.history[self.period]['tribes'][tribeId]
-                    
-                else: tribeObj = dict(self.tribes[tribeId])
-        
-                #--------------------------------------------------------------
-                # Kontrola hustoty populacie
-                #--------------------------------------------------------------
-                if 'density' in tribeObj.keys(): dens = tribeObj['density']
+            else: tribeObj = tile.getPeriodTribe(self.period, tribeId)
 
         #----------------------------------------------------------------------
         self.journal.M(f'getSelectedTribe: {res}, tileId={tileId}, period={self.period}, tribeId={tribeId}, dens={dens}')
-        return {'res':res, 'tile':tile, 'period':self.period, 'tribeId':tribeId, 'tribeObj':tribeObj, 'dens':dens}
+        return {'res':res, 'tile':tile, 'period':self.period, 'tribeId':tribeId, 'tribeObj':tribeObj}
         
     #==========================================================================
     # Utility
