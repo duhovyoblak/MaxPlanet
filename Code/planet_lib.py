@@ -69,12 +69,12 @@ tribes = {
 #------------------------------------------------------------------------------
 def getHeightAgrSource(height):
     
-    return heights['agrSource']
+    return heights[height]['agrSource']
 
 #------------------------------------------------------------------------------
 def getHeightIndSource(height):
     
-    return heights['indSource']
+    return heights[height]['indSource']
 
 #==============================================================================
 # Color Functions

@@ -136,7 +136,7 @@ class TPlanet:
 
     #--------------------------------------------------------------------------
     def simPeriod(self, period):
-
+        "Simulates new period for all tiles"
         
         #----------------------------------------------------------------------
         # Skontrolujem vstupne pomienky

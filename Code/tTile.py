@@ -135,6 +135,7 @@ class TTile:
     
     #--------------------------------------------------------------------------
     def simPeriod(self, period):
+        "Simulates respective period for this Tile based on previous period values"
         
         self.journal.I(f'{self.tileId}.simPeriod: period {period}')
         
@@ -142,12 +143,13 @@ class TTile:
         # Vyberiem z historie predchadzajucu periodu a inicializujem simulovanu periodu
         #----------------------------------------------------------------------
         lastPeriod = self.getPeriod(period-1)
-        simPeriod  = {'period':period}
+        simPeriod  = self.getPeriod(period  )
         
         #----------------------------------------------------------------------
         # Vyriesim zber resurces vratane trades podla stavu v lastPeriod
         #----------------------------------------------------------------------
         resrs = self.getResource(lastPeriod)
+        
  
         #----------------------------------------------------------------------
         # Vyriesim ubytok/prirastok populacie na zaklade ziskanych resources a emigracie
@@ -167,12 +169,15 @@ class TTile:
         #----------------------------------------------------------------------
         # Zapisem tribes ktore prezili do simulovanej Tile
         #----------------------------------------------------------------------
-        for tribeId, dens in denses.items():
+        for tribeId, densRec in denses.items():
+            
+            dens = densRec['density']
             
             if dens > 0:
-                simPeriod['tribes'][tribeId]            = tribes[tribeId]
-                simPeriod['tribes'][tribeId]['density'] = dens
-                simPeriod['resrs' ][tribeId]            = resrs [tribeId]
+                simPeriod['tribes' ][tribeId]            = tribes[tribeId]
+                simPeriod['tribes' ][tribeId]['density'] = dens
+                simPeriod['resrs'  ][tribeId]            = resrs [tribeId]
+                simPeriod['denses' ][tribeId]            = densRec
                 
         #----------------------------------------------------------------------
         # Zapisem vysledky simulacie do historie
@@ -189,11 +194,12 @@ class TTile:
         "Returns resources per Tribe based on preferences including trades and wars"
 
         self.journal.I(f'{self.tileId}.getResource:')
+        period = lastPeriod['period']
         
         # Vlastnosti Tile
         agrSource = lib.getHeightAgrSource(self.height)  # Vlastnosti biomu - urodnost AGR
         indSource = lib.getHeightIndSource(self.height)  # Vlastnosti biomu - nerasty pre IND
-        densTot   = lastPeriod['densTot']                # Celkova densita vsetkych Tribes na Tile
+        densTot   = self.getPeriodDensTot(period)        # Celkova densita vsetkych Tribes na Tile
         resrs = {}
         
         #----------------------------------------------------------------------
@@ -206,7 +212,7 @@ class TTile:
             pref = tribeObj['preference']
             know = tribeObj['knowledge' ]
             
-            resrs[tribeId] = {}
+            resrs[tribeId] = {'agr':0, 'ind':0, 'war':0}
             
             #------------------------------------------------------------------
             # Zber AGR resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
@@ -309,7 +315,8 @@ class TTile:
         "Returns period if exists, creates empty id does not exists"
         
         # Ak je to prave nasledujuca perioda v historii, vytvorim ju
-        if period == len(self.history): self.history.append({ 'period':period, 'tribes':{} })
+        if period == len(self.history): 
+            self.history.append({ 'period':period, 'tribes':{} , 'resrs':{}, 'denses':{} })
         
         # Ak perioda existuje, vratim ju, inak vratim None
         if period  < len(self.history): toRet = self.history[period]
@@ -327,6 +334,19 @@ class TTile:
         if tribeId not in actPeriod['tribes'].keys(): actPeriod['tribes'][tribeId] = lib.tribes[tribeId]
 
         return actPeriod['tribes'][tribeId]
+        
+    #--------------------------------------------------------------------------
+    def getPeriodDensTot(self, period):
+        "Returns total density for respective period"
+        
+        toRet = 0
+        
+        actPeriod = self.getPeriod(period)
+        
+        for tribeObj in actPeriod['tribes'].values():
+            toRet += tribeObj['density']
+        
+        return toRet
         
     #--------------------------------------------------------------------------
     def getPeriodDens(self, period, tribeId):

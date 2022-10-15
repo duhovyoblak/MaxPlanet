@@ -48,7 +48,6 @@ class TPlanetGui(tk.Tk):
         self.journal   = journal
         self.planet    = planet              # Objekt Planeta
         self.lblTiles  = {}                  # Zoznam tiles {lblTile: tile}
-        self.tribes    = lib.tribes          # Zoznam vsetky tribes
         
         self.tab_selected = 0                # Vybrany tab EDIT/TRIBE/SIMUL
         self.state        = 'STOP'           # Stav simulacie RUNNIG/STOP
@@ -310,7 +309,7 @@ class TPlanetGui(tk.Tk):
 
         # self.str_show.set('HEIGHT')
         self.cb_trb = ttk.Combobox(frm, textvariable=self.str_tribe)
-        self.cb_trb['values'] = list(self.tribes.keys())
+        self.cb_trb['values'] = list(lib.tribes.keys())
         self.cb_trb['state']  = 'readonly'
         self.cb_trb.bind('<<ComboboxSelected>>', self.tribeChanged)
         self.cb_trb.grid(row=4, column=0, sticky='wn', padx=_PADX, pady=_PADY)
