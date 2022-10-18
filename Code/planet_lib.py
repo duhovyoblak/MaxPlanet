@@ -1,80 +1,94 @@
 #==============================================================================
-# Planet Max: library file
+# Planet Max: Utility library file
 #------------------------------------------------------------------------------
 
 #==============================================================================
 # Constans
 #------------------------------------------------------------------------------
 heights = { 
-       0: {'color':'#4faed0', 'agrSource':  0, 'indSource':  0},
+       0: {'color':'#4faed0', 'agrWork':  0, 'agrSource':    0, 'indWork':  0, 'indSource':    0},
        
-     100: {'color':'#66ff33', 'agrSource': 18, 'indSource':  4},
-     200: {'color':'#5ceb2e', 'agrSource': 20, 'indSource':  4},
-     300: {'color':'#52d629', 'agrSource': 17, 'indSource':  4},
-     400: {'color':'#47c224', 'agrSource': 14, 'indSource':  6},
-     500: {'color':'#38a31c', 'agrSource': 12, 'indSource':  8},
-     600: {'color':'#298514', 'agrSource': 10, 'indSource': 12},
-     700: {'color':'#1a660d', 'agrSource':  9, 'indSource': 16},
-     800: {'color':'#0a4705', 'agrSource':  8, 'indSource': 20},
-     900: {'color':'#003300', 'agrSource':  7, 'indSource': 20},
+     100: {'color':'#66ff33', 'agrWork':180, 'agrSource': 1800, 'indWork':200, 'indSource':  400},
+     200: {'color':'#5ceb2e', 'agrWork':200, 'agrSource': 2000, 'indWork':230, 'indSource':  450},
+     300: {'color':'#52d629', 'agrWork':190, 'agrSource': 1700, 'indWork':270, 'indSource':  500},
+     400: {'color':'#47c224', 'agrWork':180, 'agrSource': 1400, 'indWork':300, 'indSource':  600},
+     500: {'color':'#38a31c', 'agrWork':170, 'agrSource': 1200, 'indWork':350, 'indSource':  800},
+     600: {'color':'#298514', 'agrWork':160, 'agrSource': 1000, 'indWork':400, 'indSource': 1200},
+     700: {'color':'#1a660d', 'agrWork':150, 'agrSource':  900, 'indWork':450, 'indSource': 1600},
+     800: {'color':'#0a4705', 'agrWork':150, 'agrSource':  800, 'indWork':500, 'indSource': 2000},
+     900: {'color':'#003300', 'agrWork':150, 'agrSource':  750, 'indWork':600, 'indSource': 2100},
      
-    1000: {'color':'#333300', 'agrSource':  7, 'indSource': 19},
-    1100: {'color':'#423300', 'agrSource':  6, 'indSource': 18},
-    1200: {'color':'#523300', 'agrSource':  6, 'indSource': 17},
-    1300: {'color':'#613300', 'agrSource':  5, 'indSource': 16},
-    1400: {'color':'#803300', 'agrSource':  5, 'indSource': 14},
-    1500: {'color':'#8f3300', 'agrSource':  4, 'indSource': 11},
-    1600: {'color':'#9e3300', 'agrSource':  4, 'indSource':  9},
-    1700: {'color':'#ad3300', 'agrSource':  3, 'indSource':  8},
-    1800: {'color':'#bd3300', 'agrSource':  3, 'indSource':  7},
-    1900: {'color':'#cc3300', 'agrSource':  3, 'indSource':  6},
+    1000: {'color':'#333300', 'agrWork':150, 'agrSource':  700, 'indWork':600, 'indSource': 1900},
+    1100: {'color':'#423300', 'agrWork':160, 'agrSource':  650, 'indWork':570, 'indSource': 1800},
+    1200: {'color':'#523300', 'agrWork':160, 'agrSource':  600, 'indWork':530, 'indSource': 1700},
+    1300: {'color':'#613300', 'agrWork':160, 'agrSource':  550, 'indWork':500, 'indSource': 1600},
+    1400: {'color':'#803300', 'agrWork':160, 'agrSource':  500, 'indWork':470, 'indSource': 1400},
+    1500: {'color':'#8f3300', 'agrWork':170, 'agrSource':  450, 'indWork':430, 'indSource': 1100},
+    1600: {'color':'#9e3300', 'agrWork':170, 'agrSource':  400, 'indWork':400, 'indSource':  900},
+    1700: {'color':'#ad3300', 'agrWork':170, 'agrSource':  370, 'indWork':380, 'indSource':  800},
+    1800: {'color':'#bd3300', 'agrWork':150, 'agrSource':  330, 'indWork':360, 'indSource':  700},
+    1900: {'color':'#cc3300', 'agrWork':140, 'agrSource':  300, 'indWork':330, 'indSource':  600},
     
-    2000: {'color':'#d1470f', 'agrSource':  2, 'indSource':  5},
-    2100: {'color':'#d6591d', 'agrSource':  1, 'indSource':  4},
-    2200: {'color':'#da6c2b', 'agrSource':  0, 'indSource':  4},
-    2300: {'color':'#df7e38', 'agrSource':  0, 'indSource':  3},
-    2400: {'color':'#e8a354', 'agrSource':  0, 'indSource':  3},
-    2500: {'color':'#edb562', 'agrSource':  0, 'indSource':  3},
-    2600: {'color':'#f1c870', 'agrSource':  0, 'indSource':  2},
-    2700: {'color':'#f6da7d', 'agrSource':  0, 'indSource':  2},
-    2800: {'color':'#faed8b', 'agrSource':  0, 'indSource':  1},
-    2900: {'color':'#ffff99', 'agrSource':  0, 'indSource':  1},
+    2000: {'color':'#d1470f', 'agrWork':130, 'agrSource':  250, 'indWork':300, 'indSource':  500},
+    2100: {'color':'#d6591d', 'agrWork':100, 'agrSource':  200, 'indWork':280, 'indSource':  450},
+    2200: {'color':'#da6c2b', 'agrWork': 50, 'agrSource':  150, 'indWork':260, 'indSource':  400},
+    2300: {'color':'#df7e38', 'agrWork': 20, 'agrSource':  100, 'indWork':240, 'indSource':  370},
+    2400: {'color':'#e8a354', 'agrWork': 20, 'agrSource':   50, 'indWork':220, 'indSource':  330},
+    2500: {'color':'#edb562', 'agrWork':  0, 'agrSource':    0, 'indWork':200, 'indSource':  300},
+    2600: {'color':'#f1c870', 'agrWork':  0, 'agrSource':    0, 'indWork':170, 'indSource':  250},
+    2700: {'color':'#f6da7d', 'agrWork':  0, 'agrSource':    0, 'indWork':140, 'indSource':  200},
+    2800: {'color':'#faed8b', 'agrWork':  0, 'agrSource':    0, 'indWork':120, 'indSource':  150},
+    2900: {'color':'#ffff99', 'agrWork':  0, 'agrSource':    0, 'indWork':100, 'indSource':  100},
     
-    3000: {'color':'#ffffff', 'agrSource':  0, 'indSource':  0}
+    3000: {'color':'#ffffff', 'agrWork':  0, 'agrSource':    0, 'indWork':  0, 'indSource':    0}
 }
 
 #------------------------------------------------------------------------------
 tribes = { 
-       'Green Men'  : {'color'     : {'red':0,   'green':1,   'blue':0   }, 
+       'Green Men'  : {'density'   : 0,
+                       'color'     : {'red':0,   'green':1,   'blue':0   }, 
                        'preference': {'agr':1.0, 'ind'  :0.0, 'war' :0.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       'density':0
+                       'resrs'     : {},
+                       'denses'    : {}
                       },
        
-       'Blue Indy'  : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
+       'Blue Indy'  : {'density'   : 0,
+                       'color'     : {'red':0,   'green':0,   'blue':1   }, 
                        'preference': {'agr':0.0, 'ind'  :1.0, 'war' :0.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       'density':0
+                       'resrs'     : {},
+                       'denses'    : {}
                       },
        
-       'Red Wariors': {'color'     : {'red':1,   'green':0,   'blue':0   }, 
+       'Red Wariors': {'density'   : 0,
+                       'color'     : {'red':1,   'green':0,   'blue':0   }, 
                        'preference': {'agr':0.0, 'ind'  :0.0, 'war' :1.0 },
                        'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
-                       'density':0
+                       'resrs'     : {},
+                       'denses'    : {}
                       }
 }
 
 #==============================================================================
-# Functions
+# Resource harvesting Functions
 #------------------------------------------------------------------------------
-def getHeightAgrSource(height):
+def getAgrRes(height, dens, knowledge):
+    "Returns agr resource for respective height and workforce density and knowledge"
     
-    return heights[height]['agrSource']
+    # Je mozne vyuzit maximalne stanovenu pracovnu silu, zvysna sa uz neda pouzit
+    if dens > heights[height]['agrWork']: dens = heights[height]['agrWork']
+    
+    return heights[height]['agrSource'] * (dens / heights[height]['agrWork']) * knowledge
 
 #------------------------------------------------------------------------------
-def getHeightIndSource(height):
+def getIndRes(height, dens, knowledge):
+    "Returns ind resource for respective height and workforce density and knowledge"
     
-    return heights[height]['indSource']
+    # Je mozne vyuzit maximalne stanovenu pracovnu silu, zvysna sa uz neda pouzit
+    if dens > heights[height]['indWork']: dens = heights[height]['indWork']
+    
+    return heights[height]['indSource'] * (dens / heights[height]['indWork']) * knowledge
 
 #==============================================================================
 # Color Functions

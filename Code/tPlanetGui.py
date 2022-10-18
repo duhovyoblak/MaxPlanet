@@ -157,14 +157,19 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def periodChanged(self, widget, blank, mode):
         
-        self.period = int(self.str_period.get())
+        tmpPeriod = int(self.str_period.get())
         
-        if self.period > self.planet.getMaxPeriod():
+        # Ak nastala zmena periody
+        if tmpPeriod != self.period:
             
-            self.period = self.planet.getMaxPeriod()
-            self.str_period.set(self.period)
+            self.period = tmpPeriod
         
-        else:
+            # Ak je perioda vacsia ako maximalna perioda v historii planety
+            if self.period > self.planet.getMaxPeriod():
+                self.period = self.planet.getMaxPeriod()
+                self.str_period.set(self.period)
+                
+            # Vykreslim zmenenu periodu
             self.setStatus(f'Selected period is {self.period}')
             self.mapShow()
         
@@ -195,8 +200,10 @@ class TPlanetGui(tk.Tk):
         self.planet.fName = fileName
         self.planet.load()
         self.denMax = self.planet.getMaxDensity(self.period)
+        self.period = 0
 
         self.mapCreate()
+        self.str_period.set(0)
          
     #--------------------------------------------------------------------------
     def save(self):
@@ -386,13 +393,16 @@ class TPlanetGui(tk.Tk):
         self.tabs.add(frm, text='Simulation')
  
         #----------------------------------------------------------------------
-        # Run, Stop, Reset
+        # Reset, SimOne, Start/Stop
         #----------------------------------------------------------------------
         btn_simRest = ttk.Button(frm, text='Reset Simulation to period', command=self.simReset)
         btn_simRest.grid(row=0, column=0, sticky='we', padx=_PADX, pady=_PADY)
         
+        btn_simOne = ttk.Button(frm, text='Simulate one period', command=self.simOne)
+        btn_simOne.grid(row=0, column=1, sticky='we', padx=_PADX, pady=_PADY)
+        
         self.btn_simSS = ttk.Button(frm, text='Simulation start', command=self.simStart)
-        self.btn_simSS.grid(row=0, column=1, sticky='we', padx=_PADX, pady=_PADY)
+        self.btn_simSS.grid(row=0, column=2, sticky='we', padx=_PADX, pady=_PADY)
         
         separator1 = ttk.Separator(frm, orient='horizontal')
         separator1.grid(row=1, column=0, columnspan=3, sticky='we', padx=_PADX, pady=_PADY)       
@@ -402,6 +412,11 @@ class TPlanetGui(tk.Tk):
         
         pass
     
+    #--------------------------------------------------------------------------
+    def simOne(self):
+        
+        self.simPeriod()
+            
     #--------------------------------------------------------------------------
     def simStart(self):
         
@@ -428,7 +443,7 @@ class TPlanetGui(tk.Tk):
 
         # Ak bezi simulacia, naplanujem dalsi krok
         if self.state == 'RUNNING':
-            self.after(1, self.simPeriod)
+            self.after(100, self.simPeriod)
         
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
@@ -472,7 +487,7 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Odstranim existujuce lblTiles
         #----------------------------------------------------------------------
-        for lblTile in self.lblTiles:
+        for lblTile, tile in self.lblTiles.items():
             lblTile.destroy()
 
         self.lblTiles.clear()
@@ -529,13 +544,14 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def mapShow(self):
        
+        self.denMax = self.planet.getMaxDensity(self.period)
+
         #----------------------------------------------------------------------
         # Prejdem vsetky lblTile v lblTiles
         #----------------------------------------------------------------------
-        for lblTile in self.lblTiles:
+        for lblTile, tile in self.lblTiles.items():
                 
             # Zistim vlastnosti Tile na pozicii row, col
-            tile    = self.lblTiles[lblTile]
             bcColor = self.tileColor(tile)
             
             # Vykreslim label na zobrazenie Tile
@@ -648,14 +664,14 @@ class TPlanetGui(tk.Tk):
     #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------
-    def tileColor(self, tile, period=-1):
+    def tileColor(self, tile):
         
         # Ak je to more, zobrazim more
         if tile.height==0: return lib.getHeightColor(0)
         
         # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
         show   = self.str_show.get()
-        tribes = tile.history[period]['tribes']
+        tribes = tile.history[self.period]['tribes']
                 
         if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
         elif show == 'POPULATION' : bcColor = lib.getPopulColor(tribes, self.denMax)

@@ -11,7 +11,7 @@ _SEP   = 50*''
 #==============================================================================
 # package's variables
 #------------------------------------------------------------------------------
-_C_DENS_GROWTH   = 1.2  # Koeficient prirodzeneho prirastku populacie
+_C_DENS_GROWTH   = 0.2  # Koeficient prirodzeneho prirastku populacie
 
 _STRES_MIN       = 0.1  # Zakladna miera stresu populacie
 _STRES_MAX       = 0.8  # Maximalna miera stresu populacie
@@ -94,6 +94,13 @@ class TTile:
         for neighObj in self.neighs:
             msg.append(f'{neighObj.tileId}    :{neighObj.height}'   )
             
+        for actPer in self.history:
+            
+            msg.append(f"Period = {actPer['period']}")
+            
+            for tribeId, tribeObj in actPer['tribes'].items():
+                msg.append(f"{tribeId}: density={tribeObj['density']} resr={tribeObj['resrs']} denses={tribeObj['denses']}")
+            
         return {'res':'OK', 'msg':msg}
 
     #==========================================================================
@@ -148,42 +155,21 @@ class TTile:
         #----------------------------------------------------------------------
         # Vyriesim zber resurces vratane trades podla stavu v lastPeriod
         #----------------------------------------------------------------------
-        resrs = self.getResource(lastPeriod)
+        self.getResource(lastPeriod)
         
- 
         #----------------------------------------------------------------------
         # Vyriesim ubytok/prirastok populacie na zaklade ziskanych resources a emigracie
         #----------------------------------------------------------------------
-        denses = self.evaluateDensity(lastPeriod, resrs)
+        self.evaluateDensity(lastPeriod, simPeriod)
  
         #----------------------------------------------------------------------
         # Vyriesim zmenu preferenci Tribe podla dovodu ubytku/prirastku populacie
         # Vyriesim zmenu zabudanie/zvysovanie Tribe knowledge
         #----------------------------------------------------------------------
-        tribes = lastPeriod['tribes']
 
         #----------------------------------------------------------------------
         # Vyriesim vznik noveho tribe zo vsetkych tribe na Tile
         #----------------------------------------------------------------------
-
-        #----------------------------------------------------------------------
-        # Zapisem tribes ktore prezili do simulovanej Tile
-        #----------------------------------------------------------------------
-        for tribeId, densRec in denses.items():
-            
-            dens = densRec['density']
-            
-            if dens > 0:
-                simPeriod['tribes' ][tribeId]            = tribes[tribeId]
-                simPeriod['tribes' ][tribeId]['density'] = dens
-                simPeriod['resrs'  ][tribeId]            = resrs [tribeId]
-                simPeriod['denses' ][tribeId]            = densRec
-                
-        #----------------------------------------------------------------------
-        # Zapisem vysledky simulacie do historie
-        #----------------------------------------------------------------------
-        if period < len(self.history): self.history[period] = simPeriod
-        else                         : self.history.append(simPeriod)
 
         self.journal.O(f'{self.tileId}.simPeriod: done')
 
@@ -194,12 +180,10 @@ class TTile:
         "Returns resources per Tribe based on preferences including trades and wars"
 
         self.journal.I(f'{self.tileId}.getResource:')
-        period = lastPeriod['period']
+        period = lastPeriod['period']+1
         
         # Vlastnosti Tile
-        agrSource = lib.getHeightAgrSource(self.height)  # Vlastnosti biomu - urodnost AGR
-        indSource = lib.getHeightIndSource(self.height)  # Vlastnosti biomu - nerasty pre IND
-        densTot   = self.getPeriodDensTot(period)        # Celkova densita vsetkych Tribes na Tile
+        densTile   = self.getPeriodDensTot(period-1)      # Celkova densita vsetkych Tribes last period
         resrs = {}
         
         #----------------------------------------------------------------------
@@ -216,11 +200,13 @@ class TTile:
             
             #------------------------------------------------------------------
             # Zber AGR resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
-            resrs[tribeId]['agr'] = dens * pref['agr'] * know['agr'] * agrSource *(dens/densTot)
+            resrs[tribeId]['agr'] = lib.getAgrRes( self.height, dens*pref['agr'], know['agr'] )
+            resrs[tribeId]['agr'] = round( resrs[tribeId]['agr'], 2)
 
             #------------------------------------------------------------------
             # Zber IND resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
-            resrs[tribeId]['ind'] = dens * pref['ind'] * know['ind'] * indSource *(dens/densTot)
+            resrs[tribeId]['ind'] = lib.getIndRes( self.height, dens*pref['ind'], know['ind'] )
+            resrs[tribeId]['ind'] = round( resrs[tribeId]['ind'], 2)
 
         #----------------------------------------------------------------------
         # Nakupovanie zvysnych AGR za zvysne IND vyrobky a 
@@ -229,18 +215,21 @@ class TTile:
 
 
 
+        #----------------------------------------------------------------------
+        # Zapisem priebezne vypocty do lastPeriod Tile
+        #----------------------------------------------------------------------
+        for tribeId, tribeObj in lastPeriod['tribes'].items():
+                lastPeriod['tribes'][tribeId]['resrs'] = resrs [tribeId]
+            
+        #----------------------------------------------------------------------
         self.journal.O()
-        return resrs
 
     #--------------------------------------------------------------------------
-    #--------------------------------------------------------------------------
-    def evaluateDensity(self, lastPeriod, resrs):
-        "Returns changes in populations density per Tribe based on earned resources and emigration"
+    def evaluateDensity(self, lastPeriod, simPeriod):
+        "Evaluates population density per Tribe based on earned resources and emigration"
 
         self.journal.I(f'{self.tileId}.evaluateDensity:')
-        
-        period = lastPeriod['period']
-        denses = {}
+        period = lastPeriod['period']+1
         
         #----------------------------------------------------------------------
         # Vyhodnotim zmeny populacie pre vsetky Tribes na Tile
@@ -248,62 +237,78 @@ class TTile:
         for tribeId, tribeObj in lastPeriod['tribes'].items():
 
             # Vstupne hodnoty
-            resrTot = resrs[tribeId]['agr'] + resrs[tribeId]['ind'] + resrs[tribeId]['war']
-            densTot = tribeObj['density']
-            strsTot = _STRES_MIN
-            deatTot = 0
+            resrTot = tribeObj['resrs']['agr'] + tribeObj['resrs']['ind'] + tribeObj['resrs']['war']
+            
+            # Zacinam simulaciu s povodnym obyvatelstvom z predchadzajucej periody
+            densSim = tribeObj['density']
 
             #------------------------------------------------------------------
-            # Prirodzeny prirastok populacie
+            # Opravim populaciu o prirodzeny prirastok
             #------------------------------------------------------------------
-            densTot = _C_DENS_GROWTH * densTot
+            densGrowth = _C_DENS_GROWTH * densSim
+            densSim   += densGrowth
 
             #------------------------------------------------------------------
             # Ubytok populacie nasledkom nedostatku zdrojov 1 res per 1 clovek/km2
             #------------------------------------------------------------------
-            if densTot > resrTot: 
+            if densSim > resrTot: 
                 
-                # Velkost populacie ktorej chybaju zdroje a zomrie
-                deatTot = densTot - resrTot
+                # Zistim, kolko populcie zomrie lebo nema zdroje
+                densDeath = densSim - resrTot
                 
                 # Miera stresu je pomer zomretej populacie voci povodnej populacii
-                strsTot += deatTot / densTot
+                strsTot = _STRES_MIN + (densDeath / densSim)
                 if strsTot > _STRES_MAX: strsTot = _STRES_MAX
                 
                 # Zostane zit len tolko ludi kolko ma zdroje
-                densTot = resrTot
+                densSim   = resrTot
+                
+            else:
+                strsTot   = _STRES_MIN
+                densDeath = 0
                 
             #------------------------------------------------------------------
             # Emigracia do vsetkych susednych Tiles
             #------------------------------------------------------------------
-            for neighObj in self.neighs:
+            densEmig = 0
+            s='''for neighObj in self.neighs:
                 
-                #Hustota Tribeu u susedov
-                densNeigh = neighObj.getPeriodDens(period, tribeId)
-                emigTot   = 0
+                #Hustota tohto Tribeu u susedov v last period
+                densNeigh = neighObj.getPeriodDens(period-1, tribeId)
+                densEmig  = 0
                 
                 # Ak je u nas vacsia densita naseho Tribe ako u susedov
-                if densTot > densNeigh: 
+                if densSim > densNeigh: 
                     
                     # Emigracia do susedneho tribe
-                    emig     = _STRES_EMIG * strsTot * (densTot-densNeigh)
-                    emigTot += emig
+                    emig      = _STRES_EMIG * strsTot * (densSim-densNeigh)
+                    densEmig += emig
                     
-                    # Pridam emigrovanych do susednej Tile
+                    # Pridam emigrovanych do susednej Tile v sim period
                     neighObj.addPeriodDens(period, tribeId, emig)
-
+'''
             #------------------------------------------------------------------
             # Ubytok populacie nasledkom emigracie
             #------------------------------------------------------------------
-            densTot -= emigTot
+            densSim -= densEmig
 
             #------------------------------------------------------------------
-            # Zapis vysledku pre tribe
+            # Zapisem priebezne vypocty do lastPeriod
             #------------------------------------------------------------------
-            denses[tribeId] = {'density':densTot, 'stres':strsTot, 'emigr':emigTot}
+            tribeObj['denses'] = {'densSim'   :round(densSim   , 2),
+                                  'densGrowth':round(densGrowth, 2),
+                                  'densDeath' :round(densDeath , 2),
+                                  'stres'     :round(strsTot   , 2),
+                                  'densEmig'  :round(densEmig  , 2) }
         
+            #------------------------------------------------------------------
+            # Ak tribe prezil, zapisem ho do simulovanej periody
+            #------------------------------------------------------------------
+            if densSim > 0:
+                self.addPeriodDens(period, tribeId, densSim)
+                
+            #------------------------------------------------------------------
         self.journal.O()
-        return denses
 
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
@@ -316,13 +321,9 @@ class TTile:
         
         # Ak je to prave nasledujuca perioda v historii, vytvorim ju
         if period == len(self.history): 
-            self.history.append({ 'period':period, 'tribes':{} , 'resrs':{}, 'denses':{} })
-        
-        # Ak perioda existuje, vratim ju, inak vratim None
-        if period  < len(self.history): toRet = self.history[period]
-        else                          : toRet = None
+            self.history.append({ 'period':period, 'tribes':{} })
 
-        return toRet
+        return self.history[period]
         
     #--------------------------------------------------------------------------
     def getPeriodTribe(self, period, tribeId):
@@ -331,9 +332,11 @@ class TTile:
         actPeriod = self.getPeriod(period)
         
         # Ak tribe neexistuje, doplnim ho podla vzoru
-        if tribeId not in actPeriod['tribes'].keys(): actPeriod['tribes'][tribeId] = lib.tribes[tribeId]
+        if tribeId not in actPeriod['tribes'].keys(): 
+            actPeriod['tribes'][tribeId] = dict(lib.tribes[tribeId])
 
         return actPeriod['tribes'][tribeId]
+#        return self.history[period]['tribes'][tribeId]
         
     #--------------------------------------------------------------------------
     def getPeriodDensTot(self, period):
