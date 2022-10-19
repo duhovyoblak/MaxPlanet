@@ -11,11 +11,15 @@ _SEP   = 50*''
 #==============================================================================
 # package's variables
 #------------------------------------------------------------------------------
-_C_DENS_GROWTH   = 0.2  # Koeficient prirodzeneho prirastku populacie
+_DENS_GROWTH     = 0.2   # Koeficient prirodzeneho prirastku populacie
 
-_STRES_MIN       = 0.1  # Zakladna miera stresu populacie
-_STRES_MAX       = 0.8  # Maximalna miera stresu populacie
-_STRES_EMIG      = 0.2  # Koeficient emigracie kvoli stresu
+_STRES_MIN       = 0.1   # Zakladna miera stresu populacie
+_STRES_MAX       = 0.8   # Maximalna miera stresu populacie
+_STRES_EMIG      = 0.2   # Koeficient emigracie kvoli stresu
+
+_KNOW_GROWTH     = 1.10  # Koeficient zvysenia knowledge ak jej tribe venuje pozornost
+_KNOW_LIMIT      = 0.33  # Hranica pozornosti, pri ktorej sa knowledge zvysuje
+_KNOW_DECAY      = 0.95  # Koeficient zabudania knowledge ak jej tribe nevenuje pozornost
 
 #==============================================================================
 # TTile
@@ -45,7 +49,7 @@ class TTile:
                 
             if tileSum > denMax: denMax = tileSum
 
-        return denMax
+        return round(denMax, 2)
     
     #==========================================================================
     # Constructor & utilities
@@ -135,7 +139,7 @@ class TTile:
         tribes = self.getPeriod(period)['tribes']
         
         toRet = 'Density:'
-        for tribeId, tribeObj in tribes.items(): toRet += f" {tribeId}:{tribeObj['density']}"
+        for tribeId, tribeObj in tribes.items(): toRet += f" {tribeId}:{round(tribeObj['density'], 2)}"
         if toRet=='Density: ': toRet = 'No tribe here'
         
         return toRet
@@ -195,12 +199,12 @@ class TTile:
             #------------------------------------------------------------------
             # Zber AGR resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
             resrs[tribeId]['agr'] = lib.getAgrRes( self.height, dens*pref['agr'], know['agr'] )
-            resrs[tribeId]['agr'] = round( resrs[tribeId]['agr'], 2)
+            resrs[tribeId]['agr'] = round( resrs[tribeId]['agr'], 3)
 
             #------------------------------------------------------------------
             # Zber IND resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
             resrs[tribeId]['ind'] = lib.getIndRes( self.height, dens*pref['ind'], know['ind'] )
-            resrs[tribeId]['ind'] = round( resrs[tribeId]['ind'], 2)
+            resrs[tribeId]['ind'] = round( resrs[tribeId]['ind'], 3)
 
         #----------------------------------------------------------------------
         # Nakupovanie zvysnych AGR za zvysne IND vyrobky a 
@@ -240,7 +244,7 @@ class TTile:
             #------------------------------------------------------------------
             # Opravim populaciu o prirodzeny prirastok
             #------------------------------------------------------------------
-            densGrowth = _C_DENS_GROWTH * densSim
+            densGrowth = _DENS_GROWTH * densSim
             densSim   += densGrowth
 
             #------------------------------------------------------------------
@@ -312,12 +316,40 @@ class TTile:
             # Ak tribe prezil, zapisem ho do simulovanej periody s densSim
             #------------------------------------------------------------------
             if densSim > 0:
-                self.addPeriodDens(period, tribeId, densSim)
+                self.addPeriodDens(period, tribeId, round(densSim, 2))
                 
             #------------------------------------------------------------------
         self.journal.O()
 
     #--------------------------------------------------------------------------
+    def prefsAndKnowledge(self, lastPeriod, simPeriod):
+        "Evaluates changes in preferences and knowledge"
+
+        self.journal.I(f'{self.tileId}.prefsAndKnowledge:')
+        
+        #----------------------------------------------------------------------
+        # Vyhodnotim zmeny pre vsetky Tribes na Tile
+        #----------------------------------------------------------------------
+        for tribeId, tribeObj in lastPeriod['tribes'].items():
+
+            #------------------------------------------------------------------
+            # Vyhodnocujem tribes, ktore mali nenulovu populaciu
+            #------------------------------------------------------------------
+#            dens = tribeObj['density']
+
+            #------------------------------------------------------------------
+            # Zmena knowledge podla miery preferencii = pozornosti, ktory tribe venoval oblasti
+            #------------------------------------------------------------------
+            self.knowledgeChange(tribeObj, 'agr')
+            self.knowledgeChange(tribeObj, 'ind')
+            self.knowledgeChange(tribeObj, 'war')
+            
+
+
+            #------------------------------------------------------------------
+            
+        self.journal.O()
+
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
     #==========================================================================
@@ -396,6 +428,16 @@ class TTile:
         periodTribe['density'] += dens
         
     #--------------------------------------------------------------------------
+    def knowledgeChange(self, tribeObj, resType):
+        
+        attention = tribeObj['preference'][resType]
+            
+        if attention > _KNOW_LIMIT: tribeObj['knowledge'][resType] *= _KNOW_GROWTH
+        else                      : tribeObj['knowledge'][resType] *= _KNOW_DECAY
+            
+        # Znalosti nemouzu byt vyssie ako 1 (=100%)
+        if tribeObj['knowledge'][resType] > 1: tribeObj['knowledge'][resType] = 1
+
     #--------------------------------------------------------------------------
     #==========================================================================
     # Persistency methods

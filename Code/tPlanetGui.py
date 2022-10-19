@@ -452,7 +452,7 @@ class TPlanetGui(tk.Tk):
 
         # Ak bezi simulacia, naplanujem dalsi krok
         if self.state == 'RUNNING':
-            self.after(1000, self.simPeriod)
+            self.after(800, self.simPeriod)
         
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------

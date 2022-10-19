@@ -4112,13 +4112,34 @@
       },
       "Tile 16, 19": {
             "tileId": "Tile 16, 19",
-            "height": 400,
+            "height": 1000,
             "row": 16,
             "col": 19,
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 8.0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -4718,7 +4739,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -7472,7 +7514,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -8204,7 +8267,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -8564,7 +8648,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 8.0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
