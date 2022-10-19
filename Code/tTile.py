@@ -128,7 +128,7 @@ class TTile:
             msg.append(f"Period = {actPer['period']}")
             
             for tribeId, tribeObj in actPer['tribes'].items():
-                msg.append(f"{tribeId}: density={tribeObj['density']} resr={tribeObj['resrs']} denses={tribeObj['denses']}")
+                msg.append(f"{tribeId.ljust(12)}: density={tribeObj['density']} resr={tribeObj['resrs']} denses={tribeObj['denses']}")
             
         return {'res':'OK', 'msg':msg}
 
@@ -223,10 +223,9 @@ class TTile:
         self.evaluateDensity(lastPeriod, simPeriod)
  
         #----------------------------------------------------------------------
-        # Vyriesim zmenu preferenci Tribe podla dovodu ubytku/prirastku populacie
-        # Vyriesim zmenu zabudanie/zvysovanie Tribe knowledge
+        # Vyriesim zmenu knowledge/preferenci Tribe 
         #----------------------------------------------------------------------
-        self.prefsAndKnowledge(lastPeriod, simPeriod)
+        self.changePrefsAndKnowledge(lastPeriod, simPeriod)
 
         self.journal.O(f'{self.tileId}.simPeriod: done')
 
@@ -379,7 +378,7 @@ class TTile:
         self.journal.O()
 
     #--------------------------------------------------------------------------
-    def prefsAndKnowledge(self, lastPeriod, simPeriod):
+    def changePrefsAndKnowledge(self, lastPeriod, simPeriod):
         "Evaluates changes in preferences and knowledge"
 
         self.journal.I(f'{self.tileId}.prefsAndKnowledge:')
@@ -403,9 +402,8 @@ class TTile:
             self.setPeriodKnowledge(period, tribeId, 'war', know)
 
             #------------------------------------------------------------------
-            # Zmena preferences podla miery 
+            # Zvysenie preferencie pre najnizsie  podla miery ziskanych resources
             #------------------------------------------------------------------
-
             
         self.journal.O()
 

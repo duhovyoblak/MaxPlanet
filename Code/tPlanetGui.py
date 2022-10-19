@@ -5,8 +5,9 @@ import os                 as os
 import tkinter            as tk
 import planet_lib         as lib
 
-from   tkinter            import (ttk, font, messagebox, filedialog)
-from   tkinter.messagebox import askyesno
+from   tkinter            import (ttk, font, messagebox, filedialog, scrolledtext, END)
+#from   tkinter.messagebox import askyesno
+import tkinter as tk
 
 #==============================================================================
 # package's constants
@@ -178,7 +179,8 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def periodChanged(self, widget, blank, mode):
         
-        tmpPeriod = int(self.str_period.get())
+        if self.str_period.get() != '': tmpPeriod = int(self.str_period.get())
+        else                          : tmpPeriod = 0
         
         # Ak nastala zmena periody
         if tmpPeriod != self.period:
@@ -306,8 +308,7 @@ class TPlanetGui(tk.Tk):
         frm.rowconfigure   ( 0, weight=1)
         frm.rowconfigure   ( 1, weight=1)
         frm.rowconfigure   ( 2, weight=1)
-        frm.rowconfigure   ( 3, weight=1)
-        frm.rowconfigure   ( 4, weight=10)
+        frm.rowconfigure   ( 3, weight=10)
  
         # Vlozim frame do Tabs       
         self.tabs.add(frm, text='Edit Planet')
@@ -352,8 +353,12 @@ class TPlanetGui(tk.Tk):
         btn_trbSet.grid(row=2, column=5, sticky='nwe', padx=_PADX, pady=_PADY)
         
         #----------------------------------------------------------------------
-        separator2 = ttk.Separator(frm, orient='horizontal')
-        separator2.grid(row=3, column=0, columnspan=6, sticky='we', padx=_PADX, pady=_PADY)       
+        self.st_tile = scrolledtext.ScrolledText(frm, wrap="none", width=100, height=15)
+        self.st_tile.grid(row=3, column=0, columnspan=6, sticky='nwes')
+
+        st_scrollbar = ttk.Scrollbar(self.st_tile, orient='horizontal', command=self.st_tile.xview)
+        self.st_tile["xscrollcommand"] = st_scrollbar.set
+        st_scrollbar.pack(side="bottom", fill="x", expand=False)
 
     #--------------------------------------------------------------------------
     def generate(self):
@@ -462,7 +467,7 @@ class TPlanetGui(tk.Tk):
 
         # Ak bezi simulacia, naplanujem dalsi krok
         if self.state == 'RUNNING':
-            self.after(600, self.simPeriod)
+            self.after(700, self.simPeriod)
         
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
@@ -584,16 +589,22 @@ class TPlanetGui(tk.Tk):
         self.setStatus('showTileOptions')
         self.lbl_tile['text'] = 'No Tile was selected'
         
+        #----------------------------------------------------------------------
         # Kontrola ci je vybrana Tile
+        #----------------------------------------------------------------------
         if self.lblTileSelected is None: return
-
-        # Nastavenie option podla vybranej Tile
-        tile   = self.lblTiles[self.lblTileSelected]
+        tile = self.lblTiles[self.lblTileSelected]
         
+        #----------------------------------------------------------------------
         # Vypis podla typu SHOW
+        #----------------------------------------------------------------------
         msg =  self.tileLabel(tile)
         self.lbl_tile['text'] = msg
         self.setStatus(msg)
+        
+        self.st_tile.delete("1.0", "end")
+        for line in tile.info()['msg']:
+            self.st_tile.insert(END, line + '\n')
         
     #--------------------------------------------------------------------------
     def tileLeftClick(self, event):
