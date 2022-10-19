@@ -175,6 +175,15 @@ class TPlanet:
         
         return toRet
         
+    #--------------------------------------------------------------------------
+    def getMaxKnowledge(self, period):
+        "Returns max sum of knowledge per sourcetype  for all Tiles in respective period"
+
+        toRet = TTile.getKnowMax(period)
+        self.journal.O(f'{self.name}.getMaxKnowledge: for period {period} is {toRet}')
+        
+        return toRet
+        
     #==========================================================================
     # Internal methods
     #--------------------------------------------------------------------------

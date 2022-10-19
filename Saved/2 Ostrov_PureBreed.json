@@ -1284,6 +1284,26 @@
                                           "war": 0.1
                                     },
                                     "density": 7.0
+                              },
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
                               }
                         },
                         "densTot": 7.0
@@ -3374,7 +3394,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -5369,7 +5410,48 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Blue Indy": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 0,
+                                          "blue": 1
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 1.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              },
+                              "Red Wariors": {
+                                    "color": {
+                                          "red": 1,
+                                          "green": 0,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 0.0,
+                                          "ind": 0.0,
+                                          "war": 1.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 9.0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },

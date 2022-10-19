@@ -112,9 +112,26 @@ def getPopulColor(tribes, denMax):
     return rgbToHex(mix[0], mix[1], mix[2])
 
 #------------------------------------------------------------------------------
-def getKnowlColor(tribes):
+def getKnowlColor(tribes, knowMax):
     
-    return 'blue'
+    # Ziskam mix color z knowledges vsetkych Tribes
+    mix = [0, 0, 0]
+    
+    for tribe in tribes.values():
+        
+        if tribe['density']>0:
+        
+            mix[0] += tribe['knowledge']['war']    # Channel RED   = war
+            mix[1] += tribe['knowledge']['agr']    # Channel GREEN = agr
+            mix[2] += tribe['knowledge']['ind']    # Channel BLUE  = ind
+        
+    # Normalizujem mix na globalny strop=5000 density
+    mix = normMax(mix, maxVal=knowMax)
+    
+    if mix[0]>255 or mix[1]>255 or mix[2]>255:
+        print(f'{knowMax} for {tribes}')
+    
+    return rgbToHex(mix[0], mix[1], mix[2])
 
 #------------------------------------------------------------------------------
 def getPrefsColor(tribes):

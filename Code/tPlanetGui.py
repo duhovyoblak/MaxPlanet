@@ -53,6 +53,7 @@ class TPlanetGui(tk.Tk):
         self.state        = 'STOP'           # Stav simulacie RUNNIG/STOP
         self.period       = 0                # Perioda s ktorou prave pracujem
         self.denMax       = 10               # Maximalna suhrnna density na vsetkych tiles pre danu periodu
+        self.knowMax      = 3                # Maximalna suma knowledge per srcType na vsetkych tiles pre danu periodu
         
         self.lblTileSelected = None          # lblTile s ktorou pracujem
         self.str_show   = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
@@ -125,6 +126,8 @@ class TPlanetGui(tk.Tk):
         frm.rowconfigure   ( 1, weight=1)
         frm.rowconfigure   ( 2, weight=1)
         frm.rowconfigure   ( 3, weight=1)
+        frm.rowconfigure   ( 4, weight=1)
+        frm.rowconfigure   ( 5, weight=1)
 
         #----------------------------------------------------------------------
         # Period, Show, Load & Save Buttons
@@ -154,6 +157,24 @@ class TPlanetGui(tk.Tk):
         btn_save = ttk.Button(frm, text='Save Planet', command=self.save)
         btn_save.grid(row=1, column=3, sticky='nwe', padx=_PADX, pady=_PADY)
         
+        #----------------------------------------------------------------------
+        # Seelected Tile
+        #----------------------------------------------------------------------
+        self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='Tile' )
+        self.lbl_tile.grid(row=3, column=0, columnspan=6, sticky='w', padx=_PADX, pady=_PADY)
+
+        #----------------------------------------------------------------------
+        # Selected Tribe
+        #----------------------------------------------------------------------
+        lbl_trb = ttk.Label(frm, relief=tk.FLAT, text='Available Tribes:' )
+        lbl_trb.grid(row=4, column=0, sticky='ws', padx=_PADX, pady=_PADY)
+
+        self.cb_trb = ttk.Combobox(frm, textvariable=self.str_tribe)
+        self.cb_trb['values'] = list(lib.tribes.keys())
+        self.cb_trb['state']  = 'readonly'
+        self.cb_trb.bind('<<ComboboxSelected>>', self.tribeChanged)
+        self.cb_trb.grid(row=4, column=1, sticky='wn', padx=_PADX, pady=_PADY)
+
     #--------------------------------------------------------------------------
     def periodChanged(self, widget, blank, mode):
         
@@ -178,6 +199,7 @@ class TPlanetGui(tk.Tk):
         
         self.setStatus(f'Selected show is {self.str_show.get()}')
         self.mapShow()
+        self.showTileOptions()
         
     #--------------------------------------------------------------------------
     def load(self):
@@ -201,7 +223,8 @@ class TPlanetGui(tk.Tk):
         
         self.planet.fName = fileName
         self.planet.load()
-        self.denMax = self.planet.getMaxDensity(self.period)
+        self.denMax  = self.planet.getMaxDensity  (self.period)
+        self.knowMax = self.planet.getMaxKnowledge(self.period)
 
         self.mapCreate()
         self.str_period.set(0)
@@ -223,6 +246,18 @@ class TPlanetGui(tk.Tk):
         self.planet.fName = fileName.name
         self.planet.save()
          
+    #--------------------------------------------------------------------------
+    def tribeChanged(self, event):
+        
+        self.journal.M(f'tribeChanged: Selected Tribe is {self.str_tribe.get()}')
+        self.setStatus(f'Selected Tribe is {self.str_tribe.get()}')
+        self.mapShow()
+        self.showTileOptions()
+
+        self.str_dens.set('')
+        tribe = self.getSelectedTribe()
+        if tribe is not None: self.str_dens.set(tribe['density'])
+
     #==========================================================================
     # Pravy panel pre nastroje
     #--------------------------------------------------------------------------
@@ -272,9 +307,7 @@ class TPlanetGui(tk.Tk):
         frm.rowconfigure   ( 1, weight=1)
         frm.rowconfigure   ( 2, weight=1)
         frm.rowconfigure   ( 3, weight=1)
-        frm.rowconfigure   ( 4, weight=1)
-        frm.rowconfigure   ( 5, weight=1)
-        frm.rowconfigure   ( 6, weight=1)
+        frm.rowconfigure   ( 4, weight=10)
  
         # Vlozim frame do Tabs       
         self.tabs.add(frm, text='Edit Planet')
@@ -308,52 +341,28 @@ class TPlanetGui(tk.Tk):
         #----------------------------------------------------------------------
         # Edit Tribes on the Tile
         #----------------------------------------------------------------------
-        self.lbl_tile = ttk.Label(frm, relief=tk.FLAT, text='Tile' )
-        self.lbl_tile.grid(row=2, column=0, columnspan=6, sticky='w', padx=_PADX, pady=_PADY)
-        
-        #----------------------------------------------------------------------
-        lbl_trb = ttk.Label(frm, relief=tk.FLAT, text='Available Tribes:' )
-        lbl_trb.grid(row=3, column=0, sticky='ws', padx=_PADX, pady=_PADY)
 
-        # self.str_show.set('HEIGHT')
-        self.cb_trb = ttk.Combobox(frm, textvariable=self.str_tribe)
-        self.cb_trb['values'] = list(lib.tribes.keys())
-        self.cb_trb['state']  = 'readonly'
-        self.cb_trb.bind('<<ComboboxSelected>>', self.tribeChanged)
-        self.cb_trb.grid(row=4, column=0, sticky='wn', padx=_PADX, pady=_PADY)
-
-        #----------------------------------------------------------------------
-        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="Population's density" )
-        lbl_dens.grid(row=3, column=1, sticky='ws', padx=_PADX, pady=_PADY)
+        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="I will set Population's density" )
+        lbl_dens.grid(row=2, column=0, sticky='nw', padx=_PADX, pady=_PADY)
 
         spin_dens = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_dens, width=3)
-        spin_dens.grid(row=4, column=1, sticky='nwe', padx=_PADX, pady=_PADY)
+        spin_dens.grid(row=2, column=1, sticky='nwe', padx=_PADX, pady=_PADY)
 
-        #----------------------------------------------------------------------
         btn_trbSet = ttk.Button(frm, text='Set tribe in the Tile', command=self.setTribe)
-        btn_trbSet.grid(row=4, column=5, sticky='nwe', padx=_PADX, pady=_PADY)
+        btn_trbSet.grid(row=2, column=5, sticky='nwe', padx=_PADX, pady=_PADY)
         
+        #----------------------------------------------------------------------
         separator2 = ttk.Separator(frm, orient='horizontal')
-        separator2.grid(row=5, column=0, columnspan=6, sticky='we', padx=_PADX, pady=_PADY)       
+        separator2.grid(row=3, column=0, columnspan=6, sticky='we', padx=_PADX, pady=_PADY)       
 
     #--------------------------------------------------------------------------
     def generate(self):
 
         self.planet.generate( int(self.str_rows.get()), int(self.str_cols.get()) )
-        self.denMax = self.planet.getMaxDensity(self.period)
+        self.denMax  = self.planet.getMaxDensity  (self.period)
+        self.knowMax = self.planet.getMaxKnowledge(self.period)
         self.mapCreate()
         
-    #--------------------------------------------------------------------------
-    def tribeChanged(self, event):
-        
-        self.journal.M(f'tribeChanged: Selected Tribe is {self.str_tribe.get()}')
-        self.setStatus(f'Selected Tribe is {self.str_tribe.get()}')
-        self.mapShow()
-        self.str_dens.set('')
-   
-        tribe = self.getSelectedTribe()
-        if tribe is not None: self.str_dens.set(tribe['density'])
-
     #--------------------------------------------------------------------------
     def setTribe(self):
         
@@ -377,7 +386,8 @@ class TPlanetGui(tk.Tk):
                 if tribeObj is None: self.setStatus('Tribe was not selected')
                 else: 
                     tribeObj['density'] = round(float(self.str_dens.get()),2)
-                    self.denMax = self.planet.getMaxDensity(self.period)
+                    self.denMax  = self.planet.getMaxDensity  (self.period)
+                    self.knowMax = self.planet.getMaxKnowledge(self.period)
                     self.mapShow()
                     self.showTileOptions()
             
@@ -452,7 +462,7 @@ class TPlanetGui(tk.Tk):
 
         # Ak bezi simulacia, naplanujem dalsi krok
         if self.state == 'RUNNING':
-            self.after(800, self.simPeriod)
+            self.after(600, self.simPeriod)
         
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
@@ -553,7 +563,8 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def mapShow(self):
        
-        self.denMax = self.planet.getMaxDensity(self.period)
+        self.denMax  = self.planet.getMaxDensity  (self.period)
+        self.knowMax = self.planet.getMaxKnowledge(self.period)
 
         #----------------------------------------------------------------------
         # Prejdem vsetky lblTile v lblTiles
@@ -578,9 +589,9 @@ class TPlanetGui(tk.Tk):
 
         # Nastavenie option podla vybranej Tile
         tile   = self.lblTiles[self.lblTileSelected]
-        dens = tile.getPeriodDenStr(self.period)
-        msg = f'{tile.tileId} with height {tile.height} and {dens}'
-
+        
+        # Vypis podla typu SHOW
+        msg =  self.tileLabel(tile)
         self.lbl_tile['text'] = msg
         self.setStatus(msg)
         
@@ -683,12 +694,29 @@ class TPlanetGui(tk.Tk):
         tribes = tile.history[self.period]['tribes']
                 
         if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
-        elif show == 'POPULATION' : bcColor = lib.getPopulColor(tribes, self.denMax)
-        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor(      tribes)
+        elif show == 'POPULATION' : bcColor = lib.getPopulColor(tribes, self.denMax )
+        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor(tribes, self.knowMax)
         elif show == 'PREFERENCES': bcColor = lib.getPrefsColor(      tribes)
         else                      : bcColor = 'black'
 
         return bcColor
+    
+    #--------------------------------------------------------------------------
+    def tileLabel(self, tile):
+        
+        # Ak je to more, zobrazim more
+        if tile.height==0: return 'This is a sea'
+        
+        # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
+        show = self.str_show.get()
+                
+        if   show == 'HEIGHT'     : lbl = tile.getPeriodDenStr(self.period)
+        elif show == 'POPULATION' : lbl = tile.getPeriodDenStr(self.period)
+        elif show == 'KNOWLEDGE'  : lbl = tile.getPeriodKnwStr(self.period)
+        elif show == 'PREFERENCES': lbl = tile.getPeriodPrfStr(self.period)
+        else                      : lbl = 'Unknown show option'
+
+        return f'{tile.tileId} [{tile.height}m n.m.] : {lbl}'
     
     #--------------------------------------------------------------------------
     def tileText(self, row, col):

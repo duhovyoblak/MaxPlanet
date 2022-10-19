@@ -51,6 +51,31 @@ class TTile:
 
         return round(denMax, 2)
     
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def getKnowMax(period):
+        
+        knowMax = 0
+        
+        # Prejdem vsetky tiles
+        for tile in TTile.tiles.values():
+        
+            agrSum = 0
+            indSum = 0
+            warSum = 0
+            
+            # Prejdem vsetky tribe na tile pre konkretnu periodu
+            for tribe in tile.history[period]['tribes'].values():
+                agrSum += tribe['knowledge']['agr']
+                indSum += tribe['knowledge']['ind']
+                warSum += tribe['knowledge']['war']
+                
+            if agrSum > knowMax: knowMax = agrSum
+            if indSum > knowMax: knowMax = indSum
+            if warSum > knowMax: knowMax = warSum
+
+        return round(knowMax, 3)
+    
     #==========================================================================
     # Constructor & utilities
     #--------------------------------------------------------------------------
@@ -139,8 +164,39 @@ class TTile:
         tribes = self.getPeriod(period)['tribes']
         
         toRet = 'Density:'
-        for tribeId, tribeObj in tribes.items(): toRet += f" {tribeId}:{round(tribeObj['density'], 2)}"
-        if toRet=='Density: ': toRet = 'No tribe here'
+        for tribeId, tribeObj in tribes.items(): 
+            if tribeObj['density']>0:
+                toRet += f" {tribeId}:{round(tribeObj['density'], 2)}"
+    
+        if toRet=='Density:': toRet = 'No tribe here'
+        
+        return toRet
+    
+    #--------------------------------------------------------------------------
+    def getPeriodKnwStr(self, period):
+        
+        tribes = self.getPeriod(period)['tribes']
+        
+        toRet = 'Knowledge:'
+        for tribeId, tribeObj in tribes.items():
+            if tribeObj['density']>0:
+                toRet += f" {tribeId}: agr={round(tribeObj['knowledge']['agr'], 2)}, ind={round(tribeObj['knowledge']['ind'], 2)}, war={round(tribeObj['knowledge']['war'], 2)}"
+ 
+        if toRet=='Knowledge:': toRet = 'No tribe here'
+        
+        return toRet
+    
+    #--------------------------------------------------------------------------
+    def getPeriodPrfStr(self, period):
+        
+        tribes = self.getPeriod(period)['tribes']
+        
+        toRet = 'Preferences:'
+        for tribeId, tribeObj in tribes.items(): 
+            if tribeObj['density']>0:
+                toRet += f" {tribeId}: agr={round(tribeObj['preference']['agr'], 2)}, ind={round(tribeObj['preference']['ind'], 2)}, war={round(tribeObj['preference']['war'], 2)}"
+ 
+        if toRet=='Preferences:': toRet = 'No tribe here'
         
         return toRet
     
@@ -170,6 +226,7 @@ class TTile:
         # Vyriesim zmenu preferenci Tribe podla dovodu ubytku/prirastku populacie
         # Vyriesim zmenu zabudanie/zvysovanie Tribe knowledge
         #----------------------------------------------------------------------
+        self.prefsAndKnowledge(lastPeriod, simPeriod)
 
         self.journal.O(f'{self.tileId}.simPeriod: done')
 
@@ -326,6 +383,7 @@ class TTile:
         "Evaluates changes in preferences and knowledge"
 
         self.journal.I(f'{self.tileId}.prefsAndKnowledge:')
+        period = lastPeriod['period']+1
         
         #----------------------------------------------------------------------
         # Vyhodnotim zmeny pre vsetky Tribes na Tile
@@ -333,20 +391,21 @@ class TTile:
         for tribeId, tribeObj in lastPeriod['tribes'].items():
 
             #------------------------------------------------------------------
-            # Vyhodnocujem tribes, ktore mali nenulovu populaciu
-            #------------------------------------------------------------------
-#            dens = tribeObj['density']
-
-            #------------------------------------------------------------------
             # Zmena knowledge podla miery preferencii = pozornosti, ktory tribe venoval oblasti
             #------------------------------------------------------------------
-            self.knowledgeChange(tribeObj, 'agr')
-            self.knowledgeChange(tribeObj, 'ind')
-            self.knowledgeChange(tribeObj, 'war')
+            know = self.knowledgeChange(tribeObj, 'agr')
+            self.setPeriodKnowledge(period, tribeId, 'agr', know)
             
-
+            know = self.knowledgeChange(tribeObj, 'ind')
+            self.setPeriodKnowledge(period, tribeId, 'ind', know)
+            
+            know = self.knowledgeChange(tribeObj, 'war')
+            self.setPeriodKnowledge(period, tribeId, 'war', know)
 
             #------------------------------------------------------------------
+            # Zmena preferences podla miery 
+            #------------------------------------------------------------------
+
             
         self.journal.O()
 
@@ -425,18 +484,29 @@ class TTile:
     def addPeriodDens(self, period, tribeId, dens):
         
         periodTribe = self.getPeriodTribe(period, tribeId)
-        periodTribe['density'] += dens
+        periodTribe['density'] += round(dens, 3)
         
+    #--------------------------------------------------------------------------
+    def setPeriodKnowledge(self, period, tribeId, resType, know):
+        
+        actPeriod = self.getPeriod(period)
+
+        if tribeId in actPeriod['tribes'].keys():
+            actPeriod['tribes'][tribeId]['knowledge'][resType] = know
+
     #--------------------------------------------------------------------------
     def knowledgeChange(self, tribeObj, resType):
         
+        toRet = 0
         attention = tribeObj['preference'][resType]
             
-        if attention > _KNOW_LIMIT: tribeObj['knowledge'][resType] *= _KNOW_GROWTH
-        else                      : tribeObj['knowledge'][resType] *= _KNOW_DECAY
+        if attention > _KNOW_LIMIT: toRet = tribeObj['knowledge'][resType] * _KNOW_GROWTH
+        else                      : toRet = tribeObj['knowledge'][resType] * _KNOW_DECAY
             
         # Znalosti nemouzu byt vyssie ako 1 (=100%)
-        if tribeObj['knowledge'][resType] > 1: tribeObj['knowledge'][resType] = 1
+        if toRet > 1: toRet = 1
+        
+        return round(toRet,3)
 
     #--------------------------------------------------------------------------
     #==========================================================================
