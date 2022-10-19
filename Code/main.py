@@ -17,7 +17,7 @@ from tPlanetGui       import TPlanetGui
 #------------------------------------------------------------------------------
 if __name__ =='__main__':
   
-    journal = SiqoJournal('MaxPlanet', debug=3)
+    journal = SiqoJournal('MaxPlanet', debug=2)
     journal.I( 'Main loop' )
     
     # Vytvorim testovaciu Planetu

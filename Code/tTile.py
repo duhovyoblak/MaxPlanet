@@ -167,10 +167,6 @@ class TTile:
         # Vyriesim zmenu zabudanie/zvysovanie Tribe knowledge
         #----------------------------------------------------------------------
 
-        #----------------------------------------------------------------------
-        # Vyriesim vznik noveho tribe zo vsetkych tribe na Tile
-        #----------------------------------------------------------------------
-
         self.journal.O(f'{self.tileId}.simPeriod: done')
 
     #==========================================================================
@@ -180,10 +176,8 @@ class TTile:
         "Returns resources per Tribe based on preferences including trades and wars"
 
         self.journal.I(f'{self.tileId}.getResource:')
-        period = lastPeriod['period']+1
         
         # Vlastnosti Tile
-        densTile   = self.getPeriodDensTot(period-1)      # Celkova densita vsetkych Tribes last period
         resrs = {}
         
         #----------------------------------------------------------------------
@@ -216,9 +210,10 @@ class TTile:
 
 
         #----------------------------------------------------------------------
-        # Zapisem priebezne vypocty do lastPeriod Tile
+        # Zapisem priebezne vypocty o ziskanych resources do lastPeriod Tile
         #----------------------------------------------------------------------
         for tribeId, tribeObj in lastPeriod['tribes'].items():
+            
                 lastPeriod['tribes'][tribeId]['resrs'] = resrs [tribeId]
             
         #----------------------------------------------------------------------
@@ -271,24 +266,36 @@ class TTile:
             # Emigracia do vsetkych susednych Tiles
             #------------------------------------------------------------------
             densEmig = 0
-            s='''for neighObj in self.neighs:
+            for neighTile in self.neighs:
                 
-                #Hustota tohto Tribeu u susedov v last period
-                densNeigh = neighObj.getPeriodDens(period-1, tribeId)
-                densEmig  = 0
+                #--------------------------------------------------------------
+                # Ak susedna Tile nie je more
+                #--------------------------------------------------------------
+                if neighTile.height > 0:
                 
-                # Ak je u nas vacsia densita naseho Tribe ako u susedov
-                if densSim > densNeigh: 
+                    #----------------------------------------------------------
+                    #Hustota tohto Tribeu u susedov v last period
+                    #----------------------------------------------------------
+                    densNeigh = neighTile.getPeriodDens(period-1, tribeId)
+                
+                    #----------------------------------------------------------
+                    # Ak je u nas vacsia densita naseho Tribe ako u susedov
+                    #----------------------------------------------------------
+                    if densSim > densNeigh: 
                     
-                    # Emigracia do susedneho tribe
-                    emig      = _STRES_EMIG * strsTot * (densSim-densNeigh)
-                    densEmig += emig
+                        #------------------------------------------------------
+                        # Emigracia do susedneho tribe
+                        #------------------------------------------------------
+                        emig      = _STRES_EMIG * strsTot * (densSim-densNeigh)
+                        densEmig += emig
                     
-                    # Pridam emigrovanych do susednej Tile v sim period
-                    neighObj.addPeriodDens(period, tribeId, emig)
-'''
+                        #------------------------------------------------------
+                        # Pridam emigrovanych do susednej Tile v sim period
+                        #------------------------------------------------------
+                        neighTile.addPeriodDens(period, tribeId, emig)
+                    
             #------------------------------------------------------------------
-            # Ubytok populacie nasledkom emigracie
+            # Ubytok populacie nasledkom celkove emigracie
             #------------------------------------------------------------------
             densSim -= densEmig
 

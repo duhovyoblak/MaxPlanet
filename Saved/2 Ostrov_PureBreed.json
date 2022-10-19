@@ -5210,7 +5210,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Green Men": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 1,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 1.0,
+                                          "ind": 0.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -5342,7 +5363,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Green Men": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 1,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 1.0,
+                                          "ind": 0.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 7.0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -5378,7 +5420,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Green Men": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 1,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 1.0,
+                                          "ind": 0.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -5642,7 +5705,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Green Men": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 1,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 1.0,
+                                          "ind": 0.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -5774,7 +5858,28 @@
             "history": [
                   {
                         "period": 0,
-                        "tribes": {}
+                        "tribes": {
+                              "Green Men": {
+                                    "color": {
+                                          "red": 0,
+                                          "green": 1,
+                                          "blue": 0
+                                    },
+                                    "preference": {
+                                          "agr": 1.0,
+                                          "ind": 0.0,
+                                          "war": 0.0
+                                    },
+                                    "knowledge": {
+                                          "agr": 0.1,
+                                          "ind": 0.1,
+                                          "war": 0.1
+                                    },
+                                    "density": 6.0,
+                                    "resrs": {},
+                                    "denses": {}
+                              }
+                        }
                   }
             ]
       },
@@ -7131,7 +7236,7 @@
                                           "ind": 0.1,
                                           "war": 0.1
                                     },
-                                    "density": 6.0
+                                    "density": 0.0
                               },
                               "Green Men": {
                                     "color": {
@@ -7149,7 +7254,7 @@
                                           "ind": 0.1,
                                           "war": 0.1
                                     },
-                                    "density": 5.0
+                                    "density": 8.0
                               }
                         }
                   }

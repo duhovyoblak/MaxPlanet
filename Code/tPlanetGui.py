@@ -197,10 +197,11 @@ class TPlanetGui(tk.Tk):
         # Nacitanie metadat
         #----------------------------------------------------------------------
         self.setStatus(f'Loading planet from {fileName}')
+        self.period = 0
+        
         self.planet.fName = fileName
         self.planet.load()
         self.denMax = self.planet.getMaxDensity(self.period)
-        self.period = 0
 
         self.mapCreate()
         self.str_period.set(0)
@@ -447,10 +448,11 @@ class TPlanetGui(tk.Tk):
         self.period += 1
         self.planet.simPeriod(self.period)
         self.str_period.set(self.period)
+        self.mapShow()
 
         # Ak bezi simulacia, naplanujem dalsi krok
         if self.state == 'RUNNING':
-            self.after(100, self.simPeriod)
+            self.after(1000, self.simPeriod)
         
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------

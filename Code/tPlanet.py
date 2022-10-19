@@ -138,9 +138,6 @@ class TPlanet:
     def simPeriod(self, period):
         "Simulates new period for all tiles"
         
-        self.journal.M(80*'=', True)
-        self.journal.M(f"PLanet -1: {self.tiles['Tile 5, 3'].history[period-1]}", True)
-
         #----------------------------------------------------------------------
         # Skontrolujem vstupne pomienky
         #----------------------------------------------------------------------
@@ -156,8 +153,6 @@ class TPlanet:
         for tileObj in self.tiles.values():
             tileObj.simPeriod(period)
         
-        self.journal.M(80*'=', True)
-        self.journal.M(f"PLanet -0: {self.tiles['Tile 5, 3'].history[period]}", True)
         self.journal.O(f'{self.name}.simPeriod: done')
 
     #--------------------------------------------------------------------------
