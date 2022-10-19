@@ -350,29 +350,36 @@ class TPlanetGui(tk.Tk):
         self.mapShow()
         self.str_dens.set('')
    
-        rec = self.getSelectedTribe()
-        if rec['res']=='OK': self.str_dens.set(rec['tribeObj']['density'])
+        tribe = self.getSelectedTribe()
+        if tribe is not None: self.str_dens.set(tribe['density'])
 
     #--------------------------------------------------------------------------
     def setTribe(self):
         
-        self.setStatus('setTribe')
-
-        rec = self.getSelectedTribe()
-
-        if rec['res']=='OK':
-        
-            if rec['tile'].height==0: self.setStatus('I can not set tribe into sea')
+        #----------------------------------------------------------------------
+        # Skontrolujem ci je vybrana Tile
+        #----------------------------------------------------------------------
+        if self.lblTileSelected is None: self.setStatus('Tile was not selected')
+        else:
+            #------------------------------------------------------------------
+            # Skontrolujem vhodnost biomu Tile
+            #------------------------------------------------------------------
+            tileObj  = self.lblTiles[self.lblTileSelected]
             
-            # Nastavim density pre vybrany Tribe
-            else: 
-                rec['tile'].setPeriodDens(self.period, rec['tribeId'], round(float(self.str_dens.get()),2) )
-                self.denMax = self.planet.getMaxDensity(self.period)
-                self.mapShow()
-                self.showTileOptions()
+            if tileObj.height==0: self.setStatus('I can not set tribe into sea')
+            else:
+                #--------------------------------------------------------------
+                # Skontrolujem ci je vybrany tribe
+                #--------------------------------------------------------------
+                tribeObj = self.getSelectedTribe()
+
+                if tribeObj is None: self.setStatus('Tribe was not selected')
+                else: 
+                    tribeObj['density'] = round(float(self.str_dens.get()),2)
+                    self.denMax = self.planet.getMaxDensity(self.period)
+                    self.mapShow()
+                    self.showTileOptions()
             
-        else: self.setStatus(rec['res'])
-        
     #--------------------------------------------------------------------------
     def tabSimulShow(self):
        
@@ -690,30 +697,23 @@ class TPlanetGui(tk.Tk):
     #--------------------------------------------------------------------------
     def getSelectedTribe(self):
         
-        res      = 'OK'
-        tileId   ='NO Tile'
-        tile     = {}
-        tribeObj = {}
-        dens     = 0
-        
         #----------------------------------------------------------------------
         # Kontrola vybranej Tile
         #----------------------------------------------------------------------
-        if self.lblTileSelected is None: res = 'ERROR No Tile was selected'
+        if self.lblTileSelected is None: return None
         else:
             #------------------------------------------------------------------
             # Kontrola vybraneho tribe
             #------------------------------------------------------------------
-            tile     = self.lblTiles[self.lblTileSelected]
-            tileId   = tile.tileId
+            tileObj  = self.lblTiles[self.lblTileSelected]
             tribeId  = self.str_tribe.get()
         
-            if tribeId is None or tribeId=='' : res = 'ERROR No Tribe was selected'
-            else: tribeObj = tile.getPeriodTribe(self.period, tribeId)
+            if tribeId is None or tribeId=='' : return None
+            else: tribeObj = tileObj.getPeriodTribe(self.period, tribeId)
 
         #----------------------------------------------------------------------
-        self.journal.M(f'getSelectedTribe: {res}, tileId={tileId}, period={self.period}, tribeId={tribeId}, dens={dens}')
-        return {'res':res, 'tile':tile, 'period':self.period, 'tribeId':tribeId, 'tribeObj':tribeObj}
+        self.journal.M(f'getSelectedTribe: tileId={tileObj.tileId}, period={self.period}, tribeId={tribeId}')
+        return tribeObj
         
     #==========================================================================
     # Utility

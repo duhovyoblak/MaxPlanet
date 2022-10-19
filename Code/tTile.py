@@ -302,7 +302,7 @@ class TTile:
                                   'densEmig'  :round(densEmig  , 2) }
         
             #------------------------------------------------------------------
-            # Ak tribe prezil, zapisem ho do simulovanej periody
+            # Ak tribe prezil, zapisem ho do simulovanej periody s densSim
             #------------------------------------------------------------------
             if densSim > 0:
                 self.addPeriodDens(period, tribeId, densSim)
@@ -331,12 +331,30 @@ class TTile:
         
         actPeriod = self.getPeriod(period)
         
-        # Ak tribe neexistuje, doplnim ho podla vzoru
+        #----------------------------------------------------------------------
+        # Ak tribe neexistuje, doplnim ho podla KOPIE predchadzajucej periody alebo z library
+        #----------------------------------------------------------------------
         if tribeId not in actPeriod['tribes'].keys(): 
-            actPeriod['tribes'][tribeId] = dict(lib.tribes[tribeId])
+            
+            lastPeriod = self.getPeriod(period)
+            
+            #------------------------------------------------------------------
+            # Ak v predchadzajucej periode zelany tribe Id nebol, vlozim ho z library
+            #------------------------------------------------------------------
+            if tribeId not in lastPeriod['tribes']:
+                actPeriod['tribes'][tribeId] = dict(lib.tribes[tribeId])
+            else:
+                actPeriod['tribes'][tribeId] = dict(lastPeriod['tribes'][tribeId])
 
+            #------------------------------------------------------------------
+            # Vynulujem simulovanu periodu
+            #------------------------------------------------------------------
+            actPeriod['tribes'][tribeId]['density'] = 0
+            actPeriod['tribes'][tribeId]['resrs'  ] = {}
+            actPeriod['tribes'][tribeId]['denses' ] = {}
+
+        #----------------------------------------------------------------------
         return actPeriod['tribes'][tribeId]
-#        return self.history[period]['tribes'][tribeId]
         
     #--------------------------------------------------------------------------
     def getPeriodDensTot(self, period):
