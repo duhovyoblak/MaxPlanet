@@ -705,7 +705,7 @@ class TPlanetGui(tk.Tk):
         tribes = tile.history[self.period]['tribes']
                 
         if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
-        elif show == 'POPULATION' : bcColor = lib.getPopulColor(tribes, self.denMax )
+        elif show == 'POPULATION' : bcColor = lib.getDensityColor(tribes, self.denMax )
         elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor(tribes, self.knowMax)
         elif show == 'PREFERENCES': bcColor = lib.getPrefsColor(      tribes)
         else                      : bcColor = 'black'

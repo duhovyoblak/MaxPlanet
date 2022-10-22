@@ -81,6 +81,12 @@ def getIndRes(height, dens, knowledge):
     
     return heights[height]['indSource'] * (dens / heights[height]['indWork']) * knowledge
 
+#------------------------------------------------------------------------------
+def getMaxWork(height, resType):
+    "Returns "
+    
+    return heights[height][f'{resType}Work']
+    
 #==============================================================================
 # Color Functions
 #------------------------------------------------------------------------------
@@ -93,18 +99,18 @@ def getHeightColor(height):
     return '#000000'
 
 #------------------------------------------------------------------------------
-def getPopulColor(tribes, denMax):
+def getDensityColor(tribes, denMax):
     
     # Ziskam mix color z populacii vsetkych Tribes
     mix = [0, 0, 0]
     
     for tribe in tribes.values():
         
-        tribePopul = tribe['density']
+        tribeDens = tribe['density']
     
-        mix[0] += (tribe['color']['red'  ] * tribePopul)
-        mix[1] += (tribe['color']['green'] * tribePopul)
-        mix[2] += (tribe['color']['blue' ] * tribePopul)
+        mix[0] += (tribe['color']['red'  ] * tribeDens)
+        mix[1] += (tribe['color']['green'] * tribeDens)
+        mix[2] += (tribe['color']['blue' ] * tribeDens)
         
     # Normalizujem mix na globalny strop=5000 density
     mix = normMax(mix, maxVal=denMax)
@@ -146,27 +152,64 @@ def rgbToHex(r, g, b):
 #==============================================================================
 # Math utilities
 #------------------------------------------------------------------------------
-def normMax(mix, maxVal, norma=255):
+def normMax(lst, maxVal, norma=255):
     
+    toRet = []
+
     # Nomralizujem na normu
-    if maxVal>0:
-        for i in range(len(mix)): mix[i] = mix[i] / maxVal * norma
+    if maxVal > 0: 
+        for i in range(len(lst)): toRet.append( lst[i] / maxVal * norma )
+        
+    else: toRet = list(lst)
     
-    return mix
+    return toRet
     
 #------------------------------------------------------------------------------
-def normSum(mix, norma=1):
+def normSum(lst, norma=1):
     
     # Ziskam celkovu sumu mixu
     suma = 0
-    for val in mix: suma += val
+    for val in lst: suma += val
     
-    if suma==0: return mix
+    # Ak je suma 0, vratim kopiu listu
+    if suma==0: return list(lst)
     
+    toRet = []
+
     # Normalizacia na normu
-    for i in range(len(mix)): mix[i] /= suma
+    for i in range(len(lst)): toRet.append( lst[i] / suma )
     
-    return mix
+    return toRet
+
+#------------------------------------------------------------------------------
+def normSumDic(dic, norma=1):
+    
+    toRet = {}
+
+    # Ziskam list of values
+    lst = [x for x in dic.values()]
+    
+    # Normujem list
+    lst = normSum(lst)
+    
+    # Updatnem dic na normovane values
+    i = 0
+    for key in dic.keys():
+        
+        toRet[key] = lst[i]
+        i += 1
+    
+    return toRet
+
+#==============================================================================
+# Dict utilities
+#------------------------------------------------------------------------------
+def dSort(dic, reverse=False, key1=None):
+    
+    if key1 is None: toRet = dict(sorted(dic.items(), key=lambda x: x[1],       reverse=reverse))
+    else           : toRet = dict(sorted(dic.items(), key=lambda x: x[1][key1], reverse=reverse))
+    
+    return toRet
 
 #==============================================================================
 #                              END OF FILE
