@@ -57,10 +57,10 @@ class TPlanetGui(tk.Tk):
         self.knowMax      = 3                # Maximalna suma knowledge per srcType na vsetkych tiles pre danu periodu
         
         self.lblTileSelected = None          # lblTile s ktorou pracujem
-        self.str_show   = tk.StringVar()     # Show HEIGHT/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_show   = tk.StringVar()     # Show BIOM/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
         self.str_tribe  = tk.StringVar()     # Tribe s ktorym pracujem na Tile
         self.str_dens   = tk.StringVar()     # Hustota polpulacie ktoru chcem nastavit na Tile
-        self.str_period = tk.StringVar()     # Show HEIGHT/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_period = tk.StringVar()     # Show BIOM/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
         self.str_period.trace('w', self.periodChanged)
 
         #----------------------------------------------------------------------
@@ -144,9 +144,9 @@ class TPlanetGui(tk.Tk):
         lbl_show = ttk.Label(frm, relief=tk.FLAT, text='I will show on map:' )
         lbl_show.grid(row=1, column=0, sticky='ws', padx=_PADX, pady=_PADY)
 
-        self.str_show.set('HEIGHT')
+        self.str_show.set('BIOM')
         cb_show = ttk.Combobox(frm, textvariable=self.str_show)
-        cb_show['values'] = ['HEIGHT','TRIBES', 'POPULATION', 'KNOWLEDGE','PREFERENCES']
+        cb_show['values'] = ['BIOM','TRIBES', 'POPULATION', 'KNOWLEDGE','PREFERENCES']
         cb_show['state'] = 'readonly'
         cb_show.bind('<<ComboboxSelected>>', self.showChanged)
         cb_show.grid(row=1, column=1, sticky='nw', padx=_PADX, pady=_PADY)
@@ -698,13 +698,13 @@ class TPlanetGui(tk.Tk):
     def tileColor(self, tile):
         
         # Ak je to more, zobrazim more
-        if tile.height==0: return lib.getHeightColor(0)
+        if tile.height==0: return lib.getBiomColor(0)
         
         # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
         show   = self.str_show.get()
         tribes = tile.history[self.period]['tribes']
                 
-        if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
+        if   show == 'BIOM'       : bcColor = lib.getBiomColor  (tile.height)
         elif show == 'TRIBES'     : bcColor = lib.getTribesColor(tribes, self.denMax )
         elif show == 'POPULATION' : bcColor = lib.getPopulColor (tribes, self.denMax )
         elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor (tribes, self.knowMax)
@@ -722,7 +722,7 @@ class TPlanetGui(tk.Tk):
         # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
         show = self.str_show.get()
                 
-        if   show == 'HEIGHT'     : lbl = tile.getPeriodTrbStr(self.period)
+        if   show == 'BIOM'       : lbl = tile.getPeriodTrbStr(self.period)
         elif show == 'TRIBES'     : lbl = tile.getPeriodTrbStr(self.period)
         elif show == 'POPULATION' : lbl = tile.getPeriodPopStr(self.period)
         elif show == 'KNOWLEDGE'  : lbl = tile.getPeriodKnwStr(self.period)

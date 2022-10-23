@@ -5,7 +5,7 @@
 #==============================================================================
 # Constans
 #------------------------------------------------------------------------------
-heights = { 
+bioms = { 
        0: {'color':'#4faed0', 'agrWork':  0, 'agrSource':    0, 'indWork':  0, 'indSource':    0},
        
      100: {'color':'#66ff33', 'agrWork':170, 'agrSource': 1800, 'indWork':110, 'indSource':  400},
@@ -95,20 +95,20 @@ def getResource(height, resType, workForce, knowledge):
 def getMaxResource(height, resType):
     "Returns maximum of resource can be harvested in the biom with respective height"
     
-    return heights[height][f'{resType}Source']
+    return bioms[height][f'{resType}Source']
     
 #------------------------------------------------------------------------------
 def getMaxWork(height, resType):
     "Returns maximum of workforce can be used in the biom with respective height"
     
-    return heights[height][f'{resType}Work']
+    return bioms[height][f'{resType}Work']
     
 #==============================================================================
 # Color Functions
 #------------------------------------------------------------------------------
-def getHeightColor(height):
+def getBiomColor(height):
     
-    for h, rec in heights.items():
+    for h, rec in bioms.items():
         if h >= height: return rec['color']
         
     # Ak nemam definovanu vysku
@@ -130,7 +130,7 @@ def getTribesColor(tribes, denMax):
         mix[2] += (tribe['color']['blue' ] * tribeDens)
         
     # Normalizujem mix na globalny denMax
-    mix = normMax(mix, maxVal=denMax)
+    mix = normMax(mix, maxVal=denMax, norma=255)
     
     return rgbToHex(mix[0], mix[1], mix[2])
 
@@ -150,7 +150,7 @@ def getPopulColor(tribes, denMax):
         mix[2] += tribeDens * tribe['preference']['ind']    # Channel BLUE  = ind
         
     # Normalizujem mix na globalny denMax
-    mix = normMax(mix, maxVal=denMax)
+    mix = normMax(mix, maxVal=denMax, norma=255)
     
     return rgbToHex(mix[0], mix[1], mix[2])
 
@@ -170,7 +170,7 @@ def getKnowlColor(tribes, knowMax):
             mix[2] += tribe['knowledge']['ind']    # Channel BLUE  = ind
         
     # Normalizujem mix na globalny strop
-    mix = normMax(mix, maxVal=knowMax)
+    mix = normMax(mix, maxVal=knowMax, norma=255)
     
     if mix[0]>255 or mix[1]>255 or mix[2]>255:
         print(f'{knowMax} for {tribes}')
@@ -182,7 +182,7 @@ def getPrefsColor(tribes):
     "Returns color of the tile based on preferences ratios"
     
     # Ziskam mix color z preferences vsetkych Tribes
-    mix = [0, 0, 0]
+    mix    = [0, 0, 0]
     
     for tribe in tribes.values():
         
@@ -191,9 +191,9 @@ def getPrefsColor(tribes):
             mix[0] += tribe['preference']['war']    # Channel RED   = war
             mix[1] += tribe['preference']['agr']    # Channel GREEN = agr
             mix[2] += tribe['preference']['ind']    # Channel BLUE  = ind
-        
-    # Normalizujem mix na globalny strop=5000 density
-    mix = normMax(mix, maxVal=1)
+            
+    # Normalizujem mix na sumu vsetkych preferencii na tomto tile
+    mix = normSum(mix, norma=255)
     
     if mix[0]>255 or mix[1]>255 or mix[2]>255:
         print(f'getPrefsColor for {tribes}')
@@ -208,7 +208,7 @@ def rgbToHex(r, g, b):
 #==============================================================================
 # Math utilities
 #------------------------------------------------------------------------------
-def normMax(lst, maxVal, norma=255):
+def normMax(lst, maxVal, norma=1):
     
     toRet = []
 
@@ -233,7 +233,7 @@ def normSum(lst, norma=1):
     toRet = []
 
     # Normalizacia na normu
-    for i in range(len(lst)): toRet.append( lst[i] / suma )
+    for i in range(len(lst)): toRet.append( lst[i] / suma * norma )
     
     return toRet
 
@@ -246,7 +246,7 @@ def normSumDic(dic, norma=1):
     lst = [x for x in dic.values()]
     
     # Normujem list
-    lst = normSum(lst)
+    lst = normSum(lst, norma)
     
     # Updatnem dic na normovane values
     i = 0
@@ -261,9 +261,21 @@ def normSumDic(dic, norma=1):
 # Dict utilities
 #------------------------------------------------------------------------------
 def dSort(dic, reverse=False, key1=None):
+    "Sorts dictionary by value. Secondary key is optional"
     
     if key1 is None: toRet = dict(sorted(dic.items(), key=lambda x: x[1],       reverse=reverse))
     else           : toRet = dict(sorted(dic.items(), key=lambda x: x[1][key1], reverse=reverse))
+    
+    return toRet
+
+#------------------------------------------------------------------------------
+def dRound(dic, precision=2, key1=None):
+    "Rounds values in dictionary"
+    
+    toRet = {}
+    
+    for key, val in dic.items():
+        toRet[key] = round(val, precision)
     
     return toRet
 

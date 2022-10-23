@@ -55,7 +55,7 @@ class TTile:
                 
             if tileSum > denMax: denMax = tileSum
 
-        return round(denMax, 2)
+        return denMax
     
     #--------------------------------------------------------------------------
     @staticmethod
@@ -80,7 +80,7 @@ class TTile:
             if indSum > knowMax: knowMax = indSum
             if warSum > knowMax: knowMax = warSum
 
-        return round(knowMax, 3)
+        return knowMax
     
     #==========================================================================
     # Constructor & utilities
@@ -138,19 +138,19 @@ class TTile:
                 if tribeObj['density'] > 0:
                 
                     dens = round(tribeObj['density'], 1)
-                    prefs = tribeObj['preference']
-                    knows = tribeObj['knowledge' ]
+                    prefs = lib.dRound(tribeObj['preference'], 2)
+                    knows = lib.dRound(tribeObj['knowledge' ], 2)
                  
-                    if 'resrs' in tribeObj.keys() : resrs = tribeObj['resrs' ]
-                    else                          : resrs = {}
+                    if 'resrs' in tribeObj.keys() : resrs  = lib.dRound(tribeObj['resrs' ], 2)
+                    else                          : resrs  = {}
                 
-                    if 'unus'  in tribeObj.keys() : unus  = tribeObj['unus'  ]
-                    else                          : unus  = {}
+                    if 'unus'  in tribeObj.keys() : unus   = lib.dRound(tribeObj['unus'  ], 2)
+                    else                          : unus   = {}
                 
-                    if 'effs'  in tribeObj.keys() : effs  = tribeObj['effs'  ]
-                    else                          : effs  = {}
+                    if 'effs'  in tribeObj.keys() : effs   = lib.dRound(tribeObj['effs'  ], 2)
+                    else                          : effs   = {}
                 
-                    if 'denses' in tribeObj.keys(): denses= tribeObj['denses']
+                    if 'denses' in tribeObj.keys(): denses = lib.dRound(tribeObj['denses'], 2)
                     else                          : denses = {}
                 
                     msg.append(f"{tribeId.ljust(12)}: prefs={prefs} knowledge={knows} density={dens} resrs={resrs} unus={unus} effs={effs} denses={denses}")
@@ -426,12 +426,12 @@ class TTile:
             #------------------------------------------------------------------
             # Zapisem priebezne vypocty do lastPeriod
             #------------------------------------------------------------------
-            tribeObj['denses'] = {'densSim'   :round(densSim   , 2),
-                                  'densGrowth':round(densGrowth, 2),
-                                  'densHunger':round(densHunger, 2),
-                                  'densWar'   :round(densWar,    2),
-                                  'densEmig'  :round(densEmig,   2),
-                                  'stres'     :round(strsTot,    2)
+            tribeObj['denses'] = {'densSim'   : densSim   ,
+                                  'densGrowth': densGrowth,
+                                  'densHunger': densHunger,
+                                  'densWar'   : densWar   ,
+                                  'densEmig'  : densEmig  ,
+                                  'stres'     : strsTot
                                   }
             #------------------------------------------------------------------
             # Ak tribe prezil, zapisem ho do simulovanej periody s densSim
@@ -439,7 +439,7 @@ class TTile:
             if densSim > 0:
                 
                 simPeriodTribe = self.getPeriodTribe(period, tribeId, tribeObj)
-                simPeriodTribe['density'] += round(densSim, 2)
+                simPeriodTribe['density'] += densSim
                 
             #------------------------------------------------------------------
         self.journal.O()
@@ -601,7 +601,7 @@ class TTile:
         # Znalosti nemozu byt vyssie ako 1 (=100%)
         if toRet > 1: toRet = 1
 
-        return round(toRet,3)
+        return toRet
 
     #==========================================================================
     # Work with the preferences
