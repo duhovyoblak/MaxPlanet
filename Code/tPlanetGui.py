@@ -57,10 +57,10 @@ class TPlanetGui(tk.Tk):
         self.knowMax      = 3                # Maximalna suma knowledge per srcType na vsetkych tiles pre danu periodu
         
         self.lblTileSelected = None          # lblTile s ktorou pracujem
-        self.str_show   = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_show   = tk.StringVar()     # Show HEIGHT/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
         self.str_tribe  = tk.StringVar()     # Tribe s ktorym pracujem na Tile
         self.str_dens   = tk.StringVar()     # Hustota polpulacie ktoru chcem nastavit na Tile
-        self.str_period = tk.StringVar()     # Show HEIGHT/POPULATION/KNOWLEDGE/PREFERENCES
+        self.str_period = tk.StringVar()     # Show HEIGHT/TRIBES/POPULATION/KNOWLEDGE/PREFERENCES
         self.str_period.trace('w', self.periodChanged)
 
         #----------------------------------------------------------------------
@@ -146,7 +146,7 @@ class TPlanetGui(tk.Tk):
 
         self.str_show.set('HEIGHT')
         cb_show = ttk.Combobox(frm, textvariable=self.str_show)
-        cb_show['values'] = ['HEIGHT','POPULATION','KNOWLEDGE','PREFERENCES']
+        cb_show['values'] = ['HEIGHT','TRIBES', 'POPULATION', 'KNOWLEDGE','PREFERENCES']
         cb_show['state'] = 'readonly'
         cb_show.bind('<<ComboboxSelected>>', self.showChanged)
         cb_show.grid(row=1, column=1, sticky='nw', padx=_PADX, pady=_PADY)
@@ -343,7 +343,7 @@ class TPlanetGui(tk.Tk):
         # Edit Tribes on the Tile
         #----------------------------------------------------------------------
 
-        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="I will set Population's density" )
+        lbl_dens = ttk.Label(frm, relief=tk.FLAT, text="I will set Tribe's density" )
         lbl_dens.grid(row=2, column=0, sticky='nw', padx=_PADX, pady=_PADY)
 
         spin_dens = ttk.Spinbox(frm, from_=0, to=5000, textvariable=self.str_dens, width=3)
@@ -705,9 +705,10 @@ class TPlanetGui(tk.Tk):
         tribes = tile.history[self.period]['tribes']
                 
         if   show == 'HEIGHT'     : bcColor = lib.getHeightColor(tile.height)
-        elif show == 'POPULATION' : bcColor = lib.getDensityColor(tribes, self.denMax )
-        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor(tribes, self.knowMax)
-        elif show == 'PREFERENCES': bcColor = lib.getPrefsColor(      tribes)
+        elif show == 'TRIBES'     : bcColor = lib.getTribesColor(tribes, self.denMax )
+        elif show == 'POPULATION' : bcColor = lib.getPopulColor (tribes, self.denMax )
+        elif show == 'KNOWLEDGE'  : bcColor = lib.getKnowlColor (tribes, self.knowMax)
+        elif show == 'PREFERENCES': bcColor = lib.getPrefsColor (tribes)
         else                      : bcColor = 'black'
 
         return bcColor
@@ -721,8 +722,9 @@ class TPlanetGui(tk.Tk):
         # Ak je to pevnina, zobrazim zelanu agregaciu zo zelanej historie tribes
         show = self.str_show.get()
                 
-        if   show == 'HEIGHT'     : lbl = tile.getPeriodDenStr(self.period)
-        elif show == 'POPULATION' : lbl = tile.getPeriodDenStr(self.period)
+        if   show == 'HEIGHT'     : lbl = tile.getPeriodTrbStr(self.period)
+        elif show == 'TRIBES'     : lbl = tile.getPeriodTrbStr(self.period)
+        elif show == 'POPULATION' : lbl = tile.getPeriodPopStr(self.period)
         elif show == 'KNOWLEDGE'  : lbl = tile.getPeriodKnwStr(self.period)
         elif show == 'PREFERENCES': lbl = tile.getPeriodPrfStr(self.period)
         else                      : lbl = 'Unknown show option'
@@ -750,7 +752,9 @@ class TPlanetGui(tk.Tk):
             tribeId  = self.str_tribe.get()
         
             if tribeId is None or tribeId=='' : return None
-            else: tribeObj = tileObj.getPeriodTribe(self.period, tribeId)
+            else: 
+                # Vytvorim na mape novy tribe podla vzoru v library
+                tribeObj = tileObj.getPeriodTribe(self.period, tribeId, lib.tribes[tribeId])
 
         #----------------------------------------------------------------------
         self.journal.M(f'getSelectedTribe: tileId={tileObj.tileId}, period={self.period}, tribeId={tribeId}')

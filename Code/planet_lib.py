@@ -45,45 +45,61 @@ heights = {
 
 #------------------------------------------------------------------------------
 tribes = { 
-       'Green Men'  : {'color'     : {'red':0,   'green':1,   'blue':0   }, 
-                       'preference': {'agr':1.0, 'ind'  :0.0, 'war' :0.0 },
-                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+       'Green Men'  : {'color'     : {'red':0,   'green':1,    'blue':0   }, 
+                       'preference': {'agr':0.9, 'ind'  :0.05, 'war' :0.05},
+                       'knowledge' : {'agr':0.1, 'ind'  :0.1,  'war' :0.1 },
                       },
        
-       'Blue Indy'  : {'color'     : {'red':0,   'green':0,   'blue':1   }, 
-                       'preference': {'agr':0.0, 'ind'  :1.0, 'war' :0.0 },
-                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+       'Blue Indy'  : {'color'     : {'red':0,    'green':0,    'blue':1   }, 
+                       'preference': {'agr':0.05, 'ind'  :0.9,  'war' :0.05},
+                       'knowledge' : {'agr':0.1,  'ind'  :0.1,  'war' :0.1 },
                       },
        
-       'Red Wariors': {'color'     : {'red':1,   'green':0,   'blue':0   }, 
-                       'preference': {'agr':0.0, 'ind'  :0.0, 'war' :1.0 },
-                       'knowledge' : {'agr':0.1, 'ind'  :0.1, 'war' :0.1 },
+       'Red Wariors': {'color'     : {'red':1,    'green':0,    'blue':0   }, 
+                       'preference': {'agr':0.05, 'ind'  :0.05, 'war' :0.9 },
+                       'knowledge' : {'agr':0.1,  'ind'  :0.1,  'war' :0.1 },
                       }
 }
 
 #==============================================================================
 # Resource harvesting Functions
 #------------------------------------------------------------------------------
-def getAgrRes(height, dens, knowledge):
-    "Returns agr resource for respective height and workforce density and knowledge"
+def getResource(height, resType, workForce, knowledge):
+    "Returns produced resource of <resType> for respective <height> and <workforce> density and <knowledge>"
     
-    # Je mozne vyuzit maximalne stanovenu pracovnu silu, zvysna sa uz neda pouzit
-    if dens > heights[height]['agrWork']: dens = heights[height]['agrWork']
+    # Ak som neposlal ziadnu workforce, vysledok je 0 resources pri 0 efektivite a 0 unused workforce
+    if workForce == 0: return (0, 0, 0)
     
-    return heights[height]['agrSource'] * (dens / heights[height]['agrWork']) * knowledge
+    #--------------------------------------------------------------------------
+    # Urcim skutocne vyuzitu pracovnu silu - je to maximalne vyuzitelna workoforce na biome
+    #--------------------------------------------------------------------------
+    maxForce    = getMaxWork(height, resType)
+    usedForce   = min(workForce, maxForce)
+    
+    # Urcim kolko workforce bolo alokovanych zbytocne a nebolo vyuzitych
+    unUsedForce = workForce - usedForce
+    
+    #--------------------------------------------------------------------------
+    # Vynos resource je pomerna cast USED workforce voci  max workforce krat miera znalosti
+    #--------------------------------------------------------------------------
+    res = getMaxResource(height, resType) * (usedForce/maxForce) * knowledge
+    
+    #--------------------------------------------------------------------------
+    # Efektivita je pomer vynosu a celkovej workforce (vratane nevyuzitej casti)
+    #--------------------------------------------------------------------------
+    eff = res / workForce
+    
+    return (res, eff, unUsedForce)
 
 #------------------------------------------------------------------------------
-def getIndRes(height, dens, knowledge):
-    "Returns ind resource for respective height and workforce density and knowledge"
+def getMaxResource(height, resType):
+    "Returns maximum of resource can be harvested in the biom with respective height"
     
-    # Je mozne vyuzit maximalne stanovenu pracovnu silu, zvysna sa uz neda pouzit
-    if dens > heights[height]['indWork']: dens = heights[height]['indWork']
+    return heights[height][f'{resType}Source']
     
-    return heights[height]['indSource'] * (dens / heights[height]['indWork']) * knowledge
-
 #------------------------------------------------------------------------------
 def getMaxWork(height, resType):
-    "Returns "
+    "Returns maximum of workforce can be used in the biom with respective height"
     
     return heights[height][f'{resType}Work']
     
@@ -99,7 +115,8 @@ def getHeightColor(height):
     return '#000000'
 
 #------------------------------------------------------------------------------
-def getDensityColor(tribes, denMax):
+def getTribesColor(tribes, denMax):
+    "Returns color of the Tile based on density of different Tribes"
     
     # Ziskam mix color z populacii vsetkych Tribes
     mix = [0, 0, 0]
@@ -112,13 +129,34 @@ def getDensityColor(tribes, denMax):
         mix[1] += (tribe['color']['green'] * tribeDens)
         mix[2] += (tribe['color']['blue' ] * tribeDens)
         
-    # Normalizujem mix na globalny strop=5000 density
+    # Normalizujem mix na globalny denMax
+    mix = normMax(mix, maxVal=denMax)
+    
+    return rgbToHex(mix[0], mix[1], mix[2])
+
+#------------------------------------------------------------------------------
+def getPopulColor(tribes, denMax):
+    "Returns color of the tile based on density of different prefferences"
+    
+    # Ziskam mix color z populacii vsetkych Tribes
+    mix = [0, 0, 0]
+    
+    for tribe in tribes.values():
+        
+        tribeDens = tribe['density']
+    
+        mix[0] += tribeDens * tribe['preference']['war']    # Channel RED   = war
+        mix[1] += tribeDens * tribe['preference']['agr']    # Channel GREEN = agr
+        mix[2] += tribeDens * tribe['preference']['ind']    # Channel BLUE  = ind
+        
+    # Normalizujem mix na globalny denMax
     mix = normMax(mix, maxVal=denMax)
     
     return rgbToHex(mix[0], mix[1], mix[2])
 
 #------------------------------------------------------------------------------
 def getKnowlColor(tribes, knowMax):
+    "Returns color of the tile based on knowledge ratios"
     
     # Ziskam mix color z knowledges vsetkych Tribes
     mix = [0, 0, 0]
@@ -131,7 +169,7 @@ def getKnowlColor(tribes, knowMax):
             mix[1] += tribe['knowledge']['agr']    # Channel GREEN = agr
             mix[2] += tribe['knowledge']['ind']    # Channel BLUE  = ind
         
-    # Normalizujem mix na globalny strop=5000 density
+    # Normalizujem mix na globalny strop
     mix = normMax(mix, maxVal=knowMax)
     
     if mix[0]>255 or mix[1]>255 or mix[2]>255:
@@ -141,9 +179,27 @@ def getKnowlColor(tribes, knowMax):
 
 #------------------------------------------------------------------------------
 def getPrefsColor(tribes):
+    "Returns color of the tile based on preferences ratios"
     
-    return 'green'
+    # Ziskam mix color z preferences vsetkych Tribes
+    mix = [0, 0, 0]
     
+    for tribe in tribes.values():
+        
+        if tribe['density']>0:
+        
+            mix[0] += tribe['preference']['war']    # Channel RED   = war
+            mix[1] += tribe['preference']['agr']    # Channel GREEN = agr
+            mix[2] += tribe['preference']['ind']    # Channel BLUE  = ind
+        
+    # Normalizujem mix na globalny strop=5000 density
+    mix = normMax(mix, maxVal=1)
+    
+    if mix[0]>255 or mix[1]>255 or mix[2]>255:
+        print(f'getPrefsColor for {tribes}')
+    
+    return rgbToHex(mix[0], mix[1], mix[2])
+
 #------------------------------------------------------------------------------
 def rgbToHex(r, g, b):
     

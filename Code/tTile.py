@@ -18,10 +18,14 @@ _STRES_MAX       = 0.8   # Maximalna miera stresu populacie
 _STRES_EMIG      = 0.2   # Koeficient emigracie kvoli stresu
 
 _KNOW_GROWTH     = 1.10  # Koeficient zvysenia knowledge ak jej tribe venuje pozornost
-_KNOW_LIMIT      = 0.33  # Hranica pozornosti, pri ktorej sa knowledge zvysuje
+_KNOW_LIMIT      = 0.3   # Hranica pozornosti, pri ktorej sa knowledge zvysuje
 _KNOW_DECAY      = 0.95  # Koeficient zabudania knowledge ak jej tribe nevenuje pozornost
+_KNOW_MIN        = 0.1   # Minimalna hodnota znalosti uplnych divochov
 
-_PREF_BY_WORK    = 0.1   #Zmena preferncie podla nedostatku/nadbytku pracovnej sily pre biom
+_PREF_UNUS_LIMIT =   5   # Ak je unused workforce vyssia ako tato hranica, zapricini zmenu preferencii
+_PREF_BY_UNUS    = 0.1   # Zmena preferncie podla unused workforce pre biom
+_PREF_BY_EFF     = 0.1   # Zmena preferencie podla efektivity vyuzitia pracovnej sily (preferencie)
+_PREF_MIN        = 0.05  # Minimalna hodnota preferencie pre resType
 
 #==============================================================================
 # TTile
@@ -140,10 +144,16 @@ class TTile:
                     if 'resrs' in tribeObj.keys() : resrs = tribeObj['resrs' ]
                     else                          : resrs = {}
                 
+                    if 'unus'  in tribeObj.keys() : unus  = tribeObj['unus'  ]
+                    else                          : unus  = {}
+                
+                    if 'effs'  in tribeObj.keys() : effs  = tribeObj['effs'  ]
+                    else                          : effs  = {}
+                
                     if 'denses' in tribeObj.keys(): denses= tribeObj['denses']
                     else                          : denses = {}
                 
-                    msg.append(f"{tribeId.ljust(12)}: prefs={prefs} knowledge={knows} density={dens} resr={resrs} denses={denses}")
+                    msg.append(f"{tribeId.ljust(12)}: prefs={prefs} knowledge={knows} density={dens} resrs={resrs} unus={unus} effs={effs} denses={denses}")
             
         return {'res':'OK', 'msg':msg}
 
@@ -174,7 +184,7 @@ class TTile:
         self.journal.O(f'{self.tileId}.reset: done')
         
     #--------------------------------------------------------------------------
-    def getPeriodDenStr(self, period):
+    def getPeriodTrbStr(self, period):
         
         tribes = self.getPeriod(period)['tribes']
         
@@ -185,6 +195,29 @@ class TTile:
     
         if toRet=='Density:': toRet = 'No tribe here'
         
+        return toRet
+    
+    #--------------------------------------------------------------------------
+    def getPeriodPopStr(self, period):
+        
+        tribes = self.getPeriod(period)['tribes']
+        
+        agr = 0
+        ind = 0
+        war = 0
+        
+        #----------------------------------------------------------------------
+        # Spocitam jednotlive druhy populacie
+        #----------------------------------------------------------------------
+        for tribeObj in tribes.values(): 
+            
+            agr += tribeObj['density'] * tribeObj['preference']['agr']
+            ind += tribeObj['density'] * tribeObj['preference']['ind']
+            war += tribeObj['density'] * tribeObj['preference']['war']
+                
+        if (agr+ind+war) == 0: toRet = 'No tribe here'
+        else                 : toRet = f"Population agr:{round(agr, 2)} ind:{round(ind, 2)} war:{round(war, 2)}"
+    
         return toRet
     
     #--------------------------------------------------------------------------
@@ -262,18 +295,27 @@ class TTile:
             prefs = tribeObj['preference']
             knows = tribeObj['knowledge' ]
             
-            # Pripravim si nove prazdne resources
+            # Pripravim si nove prazdne resources, efektivitu a unused workforce
             resrs = {'agr':0, 'ind':0, 'war':0}
-            
+            effs  = {'agr':0, 'ind':0, 'war':0}
+            unus  = {'agr':0, 'ind':0, 'war':0}
+
             #------------------------------------------------------------------
             # Zber AGR resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
-            resrs['agr'] = lib.getAgrRes( self.height, dens*prefs['agr'], knows['agr'] )
-            resrs['agr'] = round( resrs['agr'], 3)
+            #------------------------------------------------------------------
+            (res, eff, unu) = lib.getResource( self.height, resType='agr', workForce=dens*prefs['agr'], knowledge=knows['agr'] )
+            
+            resrs['agr'] = res
+            effs ['agr'] = eff
+            unus ['agr'] = unu
 
             #------------------------------------------------------------------
             # Zber IND resources - zlomok podla pomeru density Tribe voci celkovej densite na Tile
-            resrs['ind'] = lib.getIndRes( self.height, dens*prefs['ind'], knows['ind'] )
-            resrs['ind'] = round( resrs['ind'], 3)
+            #------------------------------------------------------------------
+            (res, eff, unu) = lib.getResource( self.height, resType='ind', workForce=dens*prefs['ind'], knowledge=knows['ind'] )
+            resrs['ind'] = res
+            effs ['ind'] = eff
+            unus ['ind'] = unu
 
             #------------------------------------------------------------------
             # Nakupovanie zvysnych AGR za zvysne IND vyrobky a 
@@ -283,9 +325,11 @@ class TTile:
 
 
             #------------------------------------------------------------------
-            # Zapisem priebezne vypocty o ziskanych resources do lastPeriod Tile
+            # Zapisem priebezne vypocty o ziskanych resources a efektivite do lastPeriod Tile
             #------------------------------------------------------------------
             tribeObj['resrs'] = resrs
+            tribeObj['unus' ] = unus
+            tribeObj['effs' ] = effs
             
         #----------------------------------------------------------------------
         self.journal.O()
@@ -414,11 +458,8 @@ class TTile:
                 #--------------------------------------------------------------
                 # Zizkam cielovu periodu pre tribId kam budem zapisovat vysledky
                 #--------------------------------------------------------------
-#                simPeriodTribe = self.getPeriodTribe(period, tribeId, tribeObj)
                 simPeriodTribe = simPeriod['tribes'][tribeId]
                 
-                if lastPeriod is simPeriod: print('Error 1')
-            
                 #--------------------------------------------------------------
                 # Zmena knowledge podla miery preferencii = pozornosti, ktory tribe venoval oblasti
                 #--------------------------------------------------------------
@@ -434,30 +475,41 @@ class TTile:
                 #--------------------------------------------------------------
                 # Preberanie knowledge od vyspelejsich tribe
                 #--------------------------------------------------------------
+
+
             
                 #--------------------------------------------------------------
-                # Zmena preferencii podla maximalne vyuzitelnej pracovnej sily pre tento biom
+                # Zmena preferencii tribe
                 #--------------------------------------------------------------
                 prefs = dict(tribeObj['preference'])
-            
-                # resource type AGR
-                actWork = prefs['agr'] * tribeObj['density']
-                maxWork = self.getMaxWork('agr')
-            
-                if actWork < maxWork: prefs['agr'] += _PREF_BY_WORK
-                else                : prefs['agr'] -= _PREF_BY_WORK
+
+                #--------------------------------------------------------------
+                # Znizenie preferencie ak nevyuziva vsetku alokovanu workForce
+                #--------------------------------------------------------------
+                unus  = tribeObj['unus']
+                if unus['agr'] > _PREF_UNUS_LIMIT: prefs['agr'] -= _PREF_BY_UNUS
+                if unus['ind'] > _PREF_UNUS_LIMIT: prefs['ind'] -= _PREF_BY_UNUS
             
                 #--------------------------------------------------------------
-                # resource type IND
-                actWork = prefs['ind'] * tribeObj['density']
-                maxWork = self.getMaxWork('ind')
-            
-                if actWork < maxWork: prefs['ind'] += _PREF_BY_WORK
-                else                : prefs['ind'] -= _PREF_BY_WORK
-            
+                # Zvysenie preferencii pre resource type s maximalnou efektivitou
                 #--------------------------------------------------------------
-                # Normujem preferencia aby ich sucet bol 1 a zapisem do simulovanej periody
+                effs = tribeObj['effs']
+                
+                # Zotriedim efektivitu zostupne
+                effs = lib.dSort(effs, reverse=True)
+                
+                # Zvysim preferencie maximalnej efektivity
+                rank = 1
+                for srcType, eff in effs.items():
+                    if rank == 1: prefs[srcType] += _PREF_BY_EFF
+                    rank += 1
+                
                 #--------------------------------------------------------------
+                # Normujem preferencie tak aby ich sucet bol 1 a zapisem do simulovanej periody
+                #--------------------------------------------------------------
+                for resType, pref in prefs.items():
+                   if pref < _PREF_MIN: prefs[resType] = _PREF_MIN
+                
                 prefs = lib.normSumDic(prefs)
                 
                 simPeriodTribe['preference']['agr'] = prefs['agr']
@@ -532,12 +584,6 @@ class TTile:
 
         return toRet
         
-    #--------------------------------------------------------------------------
-    def addPeriodDens(self, period, tribeId, dens):
-        
-        periodTribe = self.getPeriodTribe(period, tribeId)
-        periodTribe['density'] += round(dens, 3)
-        
     #==========================================================================
     # Work with the knowledge
     #--------------------------------------------------------------------------
@@ -549,9 +595,12 @@ class TTile:
         if attention > _KNOW_LIMIT: toRet = tribeObj['knowledge'][resType] * _KNOW_GROWTH
         else                      : toRet = tribeObj['knowledge'][resType] * _KNOW_DECAY
             
-        # Znalosti nemouzu byt vyssie ako 1 (=100%)
-        if toRet > 1: toRet = 1
+        # Znalosti nemozu klesnut pod zakladne minimum
+        if toRet < _KNOW_MIN: toRet = _KNOW_MIN
         
+        # Znalosti nemozu byt vyssie ako 1 (=100%)
+        if toRet > 1: toRet = 1
+
         return round(toRet,3)
 
     #==========================================================================
