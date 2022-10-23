@@ -107,6 +107,7 @@ def getMaxWork(height, resType):
 # Color Functions
 #------------------------------------------------------------------------------
 def getBiomColor(height):
+    "Returns of the biom" 
     
     for h, rec in bioms.items():
         if h >= height: return rec['color']
@@ -209,6 +210,7 @@ def rgbToHex(r, g, b):
 # Math utilities
 #------------------------------------------------------------------------------
 def normMax(lst, maxVal, norma=1):
+    "Normuje hodnoty listu aby maximalna hodnota <maxVal> bola <norma>"
     
     toRet = []
 
@@ -222,6 +224,7 @@ def normMax(lst, maxVal, norma=1):
     
 #------------------------------------------------------------------------------
 def normSum(lst, norma=1):
+    "Normuje hodnoty listu aby suma hodnot bola <norma>"
     
     # Ziskam celkovu sumu mixu
     suma = 0
@@ -239,6 +242,7 @@ def normSum(lst, norma=1):
 
 #------------------------------------------------------------------------------
 def normSumDic(dic, norma=1):
+    "Normuje hodnoty dictionary aby suma values bola <norma>"
     
     toRet = {}
 

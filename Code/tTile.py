@@ -41,6 +41,7 @@ class TTile:
     #--------------------------------------------------------------------------
     @staticmethod
     def getDenMax(period):
+        "Returns global maximum of population desnsity in the Tile"
         
         denMax = 0
         
@@ -60,6 +61,7 @@ class TTile:
     #--------------------------------------------------------------------------
     @staticmethod
     def getKnowMax(period):
+        "Returns global maximum of knowledge in the Tile"
         
         knowMax = 0
         
@@ -116,7 +118,7 @@ class TTile:
     # Reports for users
     #--------------------------------------------------------------------------
     def info(self):
-        "Returns info about the Tile"
+        "Returns info about this Tile"
 
         msg = []
         msg.append(f'Tile ID   :{self.tileId}'   )
@@ -161,7 +163,7 @@ class TTile:
     # API for GUI
     #--------------------------------------------------------------------------
     def clear(self):
-        "Clear state of Tile"
+        "Clear history of this Tile"
     
         self.journal.I(f'{self.tileId}.clear:')
         
@@ -172,7 +174,7 @@ class TTile:
         
     #--------------------------------------------------------------------------
     def reset(self):
-        "Resets state of Tile into begining state"
+        "Resets history of this Tile into state in period 0"
     
         self.journal.I(f'{self.tileId}.reset:')
         
@@ -185,6 +187,7 @@ class TTile:
         
     #--------------------------------------------------------------------------
     def getPeriodTrbStr(self, period):
+        "Returns string describing tribes in this Tile"
         
         tribes = self.getPeriod(period)['tribes']
         
@@ -199,6 +202,7 @@ class TTile:
     
     #--------------------------------------------------------------------------
     def getPeriodPopStr(self, period):
+        "Returns string describing population with different preferences in this Tile"
         
         tribes = self.getPeriod(period)['tribes']
         
@@ -222,6 +226,7 @@ class TTile:
     
     #--------------------------------------------------------------------------
     def getPeriodKnwStr(self, period):
+        "Returns string describing knowledge in this Tile"
         
         tribes = self.getPeriod(period)['tribes']
         
@@ -236,6 +241,7 @@ class TTile:
     
     #--------------------------------------------------------------------------
     def getPeriodPrfStr(self, period):
+        "Returns string describing preferences in this Tile"
         
         tribes = self.getPeriod(period)['tribes']
         
@@ -281,7 +287,7 @@ class TTile:
     # Internal methods
     #--------------------------------------------------------------------------
     def getResource(self, lastPeriod):
-        "Returns resources per Tribe based on preferences including trades and wars"
+        "Evaluates resources per Tribe based on preferences including trade and war"
 
         self.journal.I(f'{self.tileId}.getResource:')
         
@@ -527,7 +533,7 @@ class TTile:
     # Tile tools pre zadanu periodu
     #--------------------------------------------------------------------------
     def getPeriod(self, period):
-        "Returns period if exists, creates empty id does not exists"
+        "Returns data of the history period if exists in this Tile, creates empty if does not exists"
         
         # Ak je to prave nasledujuca perioda v historii, vytvorim ju
         if period == len(self.history): 
@@ -537,7 +543,7 @@ class TTile:
         
     #--------------------------------------------------------------------------
     def getPeriodTribe(self, period, tribeId, tribeFrom):
-        "Returns tribe for respective period"
+        "Returns data of the tribe for respective period in this Tile, if tribe does not exists cretes it based on <tribeFrom>"
         
         actPeriod = self.getPeriod(period)
         
@@ -562,7 +568,7 @@ class TTile:
     # Work with the density of the population
     #--------------------------------------------------------------------------
     def getPeriodDensTot(self, period):
-        "Returns total density for respective period"
+        "Returns total density on this Tile for respective period"
         
         toRet = 0
         
@@ -575,7 +581,7 @@ class TTile:
         
     #--------------------------------------------------------------------------
     def getPeriodDens(self, period, tribeId):
-        "Returns density of tribeId for respective period"
+        "Returns density of tribeId on this Tile for respective period"
         
         actPeriod = self.getPeriod(period)
         
@@ -588,6 +594,7 @@ class TTile:
     # Work with the knowledge
     #--------------------------------------------------------------------------
     def knowledgeChange(self, tribeObj, resType):
+        "Evaluates changes in the knowledge and preference for respective tribe and resource type"
         
         toRet = 0
         attention = tribeObj['preference'][resType]
@@ -607,15 +614,6 @@ class TTile:
     # Work with the preferences
     #--------------------------------------------------------------------------
 
-    #==========================================================================
-    # Tile tools nezavisle od periody
-    #--------------------------------------------------------------------------
-    def getMaxWork(self, resType):
-        "Vrati maximalnu densitu populacie uplatnitelnu pre dany typ resource"
-        
-        return lib.getMaxWork(self.height, resType)
-        
-        
     #==========================================================================
     # Persistency methods
     #--------------------------------------------------------------------------
@@ -650,7 +648,7 @@ class TTile:
         self.journal.O(f'{self.tileId}.fromJson: done')
         
 #------------------------------------------------------------------------------
-print('TTile ver 0.01')
+print('TTile ver 1.01')
 
 #==============================================================================
 #                              END OF FILE

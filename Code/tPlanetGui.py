@@ -1,12 +1,10 @@
 #==============================================================================
 # class for MaxPlanet GUI
 #------------------------------------------------------------------------------
-import os                 as os
 import tkinter            as tk
 import planet_lib         as lib
 
 from   tkinter            import (ttk, font, messagebox, filedialog, scrolledtext, END)
-#from   tkinter.messagebox import askyesno
 import tkinter as tk
 
 #==============================================================================
